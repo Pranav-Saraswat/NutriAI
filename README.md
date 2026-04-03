@@ -8,6 +8,7 @@ NutriAI is a Flask-based AI nutrition assistant with:
 - MongoDB-backed user and chat storage
 - Daily calorie, protein, water, and step targets
 - Docker support for local full-stack setup
+- Optional Cloudflare Tunnel scripts for public sharing
 
 ## Tech Stack
 
@@ -44,6 +45,9 @@ NutriAI/
 ├── .gitignore
 ├── docker-compose.yml
 ├── Dockerfile
+├── scripts/
+│   ├── cloudflare-tunnel.sh
+│   └── setup-dev.sh
 ├── requirements.txt
 ├── run.py
 └── README.md
@@ -140,6 +144,96 @@ To remove the MongoDB volume too:
 docker compose down -v
 ```
 
+## One-Command Linux Setup
+
+For Ubuntu/Debian, the repo now includes a bootstrap script:
+
+```bash
+chmod +x scripts/*.sh
+./scripts/setup-dev.sh --all
+```
+
+What `--all` does:
+
+- creates `.env` from `.env.example` if missing
+- installs Docker Engine and Docker Compose plugin
+- installs `cloudflared`
+- starts the NutriAI Docker stack
+
+Useful variants:
+
+```bash
+./scripts/setup-dev.sh --create-env --install-docker --install-cloudflared
+./scripts/setup-dev.sh --install-mongo-local
+./scripts/setup-dev.sh --start-docker
+```
+
+Notes:
+
+- The setup script currently targets Ubuntu/Debian on Linux.
+- `--install-mongo-local` installs MongoDB directly on the host instead of using Docker.
+- On Debian 12, the script intentionally recommends Docker MongoDB instead of the MongoDB 7.0 apt path.
+
+## Local MongoDB Installation
+
+If you want MongoDB on the host instead of Docker:
+
+```bash
+./scripts/setup-dev.sh --install-mongo-local
+```
+
+After installation, the script starts and enables `mongod` automatically.
+
+Default local Mongo URI:
+
+```text
+mongodb://localhost:27017/
+```
+
+If you use Docker Compose instead, the app connects to:
+
+```text
+mongodb://mongo:27017/
+```
+
+## Cloudflare Tunnel
+
+You can expose the local app publicly using Cloudflare Tunnel.
+
+### Quick tunnel for testing
+
+```bash
+./scripts/cloudflare-tunnel.sh
+```
+
+This exposes:
+
+```text
+http://localhost:5000
+```
+
+You can also point it to a custom local URL:
+
+```bash
+./scripts/cloudflare-tunnel.sh --url http://localhost:5000
+```
+
+### Named tunnel with token
+
+Add this to `.env`:
+
+```text
+CLOUDFLARE_TUNNEL_TOKEN=your_token_here
+```
+
+Then run:
+
+```bash
+./scripts/cloudflare-tunnel.sh --named
+```
+
+This is the better path for a stable hostname.
+
 ## Environment Variables
 
 Common variables used by the app:
@@ -157,6 +251,8 @@ Common variables used by the app:
 | `SESSION_COOKIE_SECURE` | Secure cookie flag | `False` locally, `True` behind HTTPS |
 | `SESSION_LIFETIME_DAYS` | Remember-me session duration | `30` |
 | `CORS_ORIGINS` | Allowed frontend origins | `http://127.0.0.1:5000,http://localhost:5000` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | Token for a named Cloudflare Tunnel | `token-from-cloudflare` |
+| `APP_URL` | Local URL to expose with quick tunnel | `http://localhost:5000` |
 
 ## API Endpoints
 
@@ -199,6 +295,16 @@ Install Docker Desktop or Docker Engine, then retry:
 ```bash
 docker compose up --build
 ```
+
+### cloudflared command not found
+
+Install it with the setup script:
+
+```bash
+./scripts/setup-dev.sh --install-cloudflared
+```
+
+Or install it manually using Cloudflare's instructions for your OS.
 
 ## Development Notes
 
