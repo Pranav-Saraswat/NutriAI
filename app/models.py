@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from bson import ObjectId
+from flask import current_app
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from pymongo import ASCENDING, DESCENDING, MongoClient
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -40,16 +41,38 @@ class MongoDB:
         self.users.create_index([("email", ASCENDING)], unique=True)
         self.chat_messages.create_index([("user_id", ASCENDING), ("created_at", ASCENDING)])
 
+    def ensure_connection(self):
+        """Refresh connection status and indexes if MongoDB becomes available later."""
+        if self.client is None:
+            raise RuntimeError("MongoDB has not been initialized.")
+        try:
+            self.client.admin.command("ping")
+            if not self.available:
+                self._ensure_indexes()
+            self.available = True
+            self.last_error = None
+            return True
+        except PyMongoError as exc:
+            self.available = False
+            self.last_error = str(exc)
+            try:
+                current_app.logger.warning("MongoDB connection check failed: %s", exc)
+            except RuntimeError:
+                pass
+            return False
+
     @property
     def users(self):
         if self.database is None:
             raise RuntimeError("MongoDB has not been initialized.")
+        self.ensure_connection()
         return self.database["users"]
 
     @property
     def chat_messages(self):
         if self.database is None:
             raise RuntimeError("MongoDB has not been initialized.")
+        self.ensure_connection()
         return self.database["chat_messages"]
 
 

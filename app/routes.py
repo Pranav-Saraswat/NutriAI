@@ -4,6 +4,7 @@ from .services import llm_service
 from datetime import datetime
 from functools import wraps
 import math
+from pymongo.errors import PyMongoError
 
 main_bp = Blueprint('main', __name__)
 
@@ -71,6 +72,7 @@ def login_required(f):
         if 'user_id' not in session:
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('main.login'))
+        db.ensure_connection()
         if not db.available:
             return database_unavailable_response()
         user = get_current_user()
@@ -299,6 +301,12 @@ def api_chat():
             'success': False,
             'error': result['error'] or 'AI service unavailable'
         }), 502
+    except PyMongoError:
+        current_app.logger.exception('MongoDB error while processing chat request')
+        return jsonify({
+            'success': False,
+            'error': 'Database connection is unavailable. Please try again after MongoDB is running.'
+        }), 503
     except Exception:
         current_app.logger.exception('Unexpected error while processing chat request')
         return jsonify({
@@ -366,6 +374,12 @@ def clear_chat_history():
             }), 503
         ChatMessage.delete_for_user(session['user_id'])
         return jsonify({'success': True, 'message': 'Chat history cleared'})
+    except PyMongoError:
+        current_app.logger.exception('MongoDB error while clearing chat history')
+        return jsonify({
+            'success': False,
+            'error': 'Database connection is unavailable. Please try again after MongoDB is running.'
+        }), 503
     except Exception:
         current_app.logger.exception('Unexpected error while clearing chat history')
         return jsonify({
