@@ -1,0 +1,517 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile - NutriAI{% endblock %}
+
+{% block content %}
+<section class="profile-section">
+    <div class="profile-container">
+        <div class="profile-header">
+            <a href="{{ url_for('main.chat_interface') }}" class="back-btn">← Back to Chat</a>
+            <h1>👤 My Profile</h1>
+            <p>Manage your personal information and health goals</p>
+        </div>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="profile-grid">
+            <!-- Profile Summary Card -->
+            <div class="profile-summary-card">
+                <div class="summary-avatar">
+                    {{ user.name[0].upper() if user.name else 'U' }}
+                </div>
+                <h2>{{ user.name }}</h2>
+                <p class="summary-email">{{ user.email }}</p>
+                
+                <div class="summary-stats">
+                    <div class="summary-stat">
+                        <span class="stat-icon">📊</span>
+                        <span class="stat-value">{{ user.get_bmi()|round(1) if user.get_bmi() else '-' }}</span>
+                        <span class="stat-label">BMI</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-icon">🎯</span>
+                        <span class="stat-value">{{ user.goal_type.replace('_', ' ').title() if user.goal_type else '-' }}</span>
+                        <span class="stat-label">Goal</span>
+                    </div>
+                    <div class="summary-stat">
+                        <span class="stat-icon">🏃</span>
+                        <span class="stat-value">{{ user.activity_level.replace('_', ' ').title() if user.activity_level else '-' }}</span>
+                        <span class="stat-label">Activity</span>
+                    </div>
+                </div>
+                
+                <div class="account-info">
+                    <div class="info-row">
+                        <span class="info-label">Member Since:</span>
+                        <span class="info-value">{{ user.created_at.strftime('%B %Y') if user.created_at else '-' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Login:</span>
+                        <span class="info-value">{{ user.last_login.strftime('%b %d, %Y') if user.last_login else 'First login' }}</span>
+                    </div>
+                </div>
+
+                {% if targets %}
+                <div class="targets-panel">
+                    <h3>Today’s Targets</h3>
+                    <div class="target-pill">Calories: {{ targets.calorie_target }} kcal</div>
+                    <div class="target-pill">Protein: {{ targets.protein_grams }} g</div>
+                    <div class="target-pill">Water: {{ targets.water_liters }} L</div>
+                    <div class="target-pill">Steps: {{ targets.steps_goal }}</div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Profile Edit Form -->
+            <div class="profile-form-card">
+                <form method="POST" class="profile-form" id="profileForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <div class="form-section-header">
+                        <span class="section-icon">📋</span>
+                        <h3>Personal Information</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name">Full Name <span class="required">*</span></label>
+                        <input type="text" id="name" name="name" required value="{{ user.name if user.name else '' }}" placeholder="John Doe">
+                    </div>
+                    
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="age">Age <span class="required">*</span></label>
+                            <input type="number" id="age" name="age" min="1" max="120" required value="{{ user.age if user.age else '' }}" placeholder="25">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="gender">Gender <span class="required">*</span></label>
+                            <select id="gender" name="gender" required>
+                                <option value="">Select...</option>
+                                <option value="male" {{ 'selected' if user.gender == 'male' else '' }}>Male</option>
+                                <option value="female" {{ 'selected' if user.gender == 'female' else '' }}>Female</option>
+                                <option value="other" {{ 'selected' if user.gender == 'other' else '' }}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group-row">
+                        <div class="form-group">
+                            <label for="height">Height (cm) <span class="required">*</span></label>
+                            <input type="number" id="height" name="height" min="50" max="250" required value="{{ user.height_cm if user.height_cm else '' }}" placeholder="170">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="weight">Weight (kg) <span class="required">*</span></label>
+                            <input type="number" id="weight" name="weight" min="20" max="300" step="0.1" required value="{{ user.weight_kg if user.weight_kg else '' }}" placeholder="70">
+                        </div>
+                    </div>
+                    
+                    <div class="form-section-header">
+                        <span class="section-icon">🎯</span>
+                        <h3>Goals & Activity</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="goal_type">Primary Goal <span class="required">*</span></label>
+                        <select id="goal_type" name="goal_type" required>
+                            <option value="">Select your goal...</option>
+                            <option value="weight_loss" {{ 'selected' if user.goal_type == 'weight_loss' else '' }}>🔥 Weight Loss</option>
+                            <option value="muscle_gain" {{ 'selected' if user.goal_type == 'muscle_gain' else '' }}>💪 Muscle Gain</option>
+                            <option value="maintain" {{ 'selected' if user.goal_type == 'maintain' else '' }}>⚖️ Maintain Weight</option>
+                            <option value="improve_health" {{ 'selected' if user.goal_type == 'improve_health' else '' }}>❤️ Improve Overall Health</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="target_weight">Target Weight (kg)</label>
+                        <input type="number" id="target_weight" name="target_weight" min="20" max="300" step="0.1" value="{{ user.target_weight if user.target_weight else '' }}" placeholder="65">
+                        <small>Your ideal goal weight (optional)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="activity_level">Activity Level <span class="required">*</span></label>
+                        <select id="activity_level" name="activity_level" required>
+                            <option value="">Select...</option>
+                            <option value="sedentary" {{ 'selected' if user.activity_level == 'sedentary' else '' }}>🪑 Sedentary (little/no exercise)</option>
+                            <option value="light" {{ 'selected' if user.activity_level == 'light' else '' }}>🚶 Light (1-3 days/week)</option>
+                            <option value="moderate" {{ 'selected' if user.activity_level == 'moderate' else '' }}>🏃 Moderate (3-5 days/week)</option>
+                            <option value="active" {{ 'selected' if user.activity_level == 'active' else '' }}>🏋️ Active (6-7 days/week)</option>
+                            <option value="very_active" {{ 'selected' if user.activity_level == 'very_active' else '' }}>🔥 Very Active (physical job + exercise)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-section-header">
+                        <span class="section-icon">❤️</span>
+                        <h3>Health Information</h3>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dietary_preferences">Dietary Preferences</label>
+                        <input type="text" id="dietary_preferences" name="dietary_preferences" value="{{ user.dietary_preferences if user.dietary_preferences else '' }}" placeholder="e.g., Vegan, Vegetarian, Keto, No restrictions">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="allergies">Allergies or Food Intolerances</label>
+                        <textarea id="allergies" name="allergies" rows="2" placeholder="e.g., Peanuts, Dairy, Gluten">{{ user.allergies if user.allergies else '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="medical_conditions">Medical Conditions (Optional)</label>
+                        <textarea id="medical_conditions" name="medical_conditions" rows="2" placeholder="e.g., Diabetes, Hypertension, Thyroid">{{ user.medical_conditions if user.medical_conditions else '' }}</textarea>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">
+                            Save Changes ✓
+                        </button>
+                        <a href="{{ url_for('main.chat_interface') }}" class="btn btn-secondary btn-lg btn-block" style="margin-top: 0.75rem;">
+                            Back to Chat
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* Profile Section */
+.profile-section {
+    padding: 2rem 1rem;
+    min-height: calc(100vh - 140px);
+    background: var(--bg-primary);
+}
+
+.profile-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.profile-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.back-btn {
+    display: inline-block;
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(16, 163, 127, 0.1);
+    border-radius: var(--radius);
+    transition: all 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(16, 163, 127, 0.2);
+}
+
+.profile-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.profile-header p {
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* Flash Messages */
+.flash-message {
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.flash-success {
+    background: rgba(16, 163, 127, 0.1);
+    border: 1px solid rgba(16, 163, 127, 0.3);
+    color: var(--accent);
+}
+
+.flash-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+/* Profile Grid */
+.profile-grid {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 2rem;
+}
+
+/* Profile Summary Card */
+.profile-summary-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.summary-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, #34d399 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 auto 1.5rem auto;
+}
+
+.profile-summary-card h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.summary-email {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.5rem;
+}
+
+.summary-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.stat-icon {
+    font-size: 1.25rem;
+}
+
+.stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.account-info {
+    text-align: left;
+}
+
+.targets-panel {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+    text-align: left;
+}
+
+.targets-panel h3 {
+    margin: 0 0 0.9rem 0;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.target-pill {
+    padding: 0.65rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(16, 163, 127, 0.08);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 0.55rem;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+}
+
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.info-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Profile Form Card */
+.profile-form-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    padding: 2.5rem;
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 2rem 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.form-section-header:first-of-type {
+    margin-top: 0;
+}
+
+.section-icon {
+    font-size: 1.5rem;
+}
+
+.form-section-header h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Form Styles */
+.profile-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.profile-form .form-group-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.profile-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.profile-form input,
+.profile-form select,
+.profile-form textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.3s;
+}
+
+.profile-form input:focus,
+.profile-form select:focus,
+.profile-form textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.15);
+}
+
+.profile-form small {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.profile-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.required {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+.form-actions {
+    margin-top: 2.5rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .profile-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-summary-card {
+        position: static;
+    }
+    
+    .summary-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .profile-form-card {
+        padding: 1.5rem;
+    }
+    
+    .profile-form .form-group-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-stats {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .profile-header h1 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
+<script>
+// Show loading state on submit
+document.getElementById('profileForm').addEventListener('submit', function(e) {
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = 'Saving... ⏳';
+});
+</script>
+{% endblock %}

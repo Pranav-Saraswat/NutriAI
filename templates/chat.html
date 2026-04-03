@@ -1,0 +1,1022 @@
+{% extends "base.html" %}
+
+{% block title %}Chat - NutriAI{% endblock %}
+
+{% block content %}
+<div class="chat-layout">
+    <!-- Left Sidebar (User Profile) -->
+    <aside class="chat-sidebar">
+        <div class="sidebar-header">
+            <a href="{{ url_for('main.index') }}" class="sidebar-logo">
+                🥗 NutriAI
+            </a>
+            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+        </div>
+        
+        <div class="sidebar-content">
+            <!-- New Chat Button -->
+            <button class="new-chat-btn" onclick="location.reload()">
+                <span class="btn-icon">+</span>
+                <span>New Chat</span>
+            </button>
+            
+            <!-- User Profile Card -->
+            <div class="profile-card">
+                <div class="profile-avatar">
+                    {{ user.name[0].upper() if user.name else 'U' }}
+                </div>
+                <div class="profile-info">
+                    <h3 class="profile-name">{{ user.name }}</h3>
+                    <p class="profile-email">{{ user.email }}</p>
+                </div>
+                <a href="{{ url_for('main.profile') }}" class="profile-edit" title="Edit Profile">✏️</a>
+            </div>
+            
+            <!-- Profile Stats -->
+            <div class="profile-stats">
+                <div class="stat-row">
+                    <span class="stat-label">Age</span>
+                    <span class="stat-value">{{ user.age if user.age else '-' }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Gender</span>
+                    <span class="stat-value">{{ user.gender.capitalize() if user.gender else '-' }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Height</span>
+                    <span class="stat-value">{{ user.height_cm if user.height_cm else '-' }} cm</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Weight</span>
+                    <span class="stat-value">{{ user.weight_kg if user.weight_kg else '-' }} kg</span>
+                </div>
+                {% if user.get_bmi() %}
+                <div class="stat-row">
+                    <span class="stat-label">BMI</span>
+                    <span class="stat-value bmi-{{ user.get_bmi_category()|lower }}">{{ user.get_bmi()|round(1) }} ({{ user.get_bmi_category() }})</span>
+                </div>
+                {% endif %}
+                <div class="stat-row">
+                    <span class="stat-label">Goal</span>
+                    <span class="stat-value">{{ user.goal_type.replace('_', ' ').title() if user.goal_type else '-' }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Activity</span>
+                    <span class="stat-value">{{ user.activity_level.replace('_', ' ').title() if user.activity_level else '-' }}</span>
+                </div>
+            </div>
+            
+            <!-- Quick Info -->
+            {% if user.dietary_preferences %}
+            <div class="profile-info-box">
+                <span class="info-label">🥗 Diet:</span>
+                <span class="info-value">{{ user.dietary_preferences }}</span>
+            </div>
+            {% endif %}
+            
+            {% if user.allergies %}
+            <div class="profile-info-box alert">
+                <span class="info-label">⚠️ Allergies:</span>
+                <span class="info-value">{{ user.allergies }}</span>
+            </div>
+            {% endif %}
+
+            {% if targets %}
+            <div class="daily-targets-card">
+                <h4>Daily Targets</h4>
+                <div class="target-row">
+                    <span>Calories</span>
+                    <strong>{{ targets.calorie_target }} kcal</strong>
+                </div>
+                <div class="target-row">
+                    <span>Protein</span>
+                    <strong>{{ targets.protein_grams }} g</strong>
+                </div>
+                <div class="target-row">
+                    <span>Water</span>
+                    <strong>{{ targets.water_liters }} L</strong>
+                </div>
+                <div class="target-row">
+                    <span>Steps</span>
+                    <strong>{{ targets.steps_goal }}</strong>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <a href="{{ url_for('main.profile') }}" class="sidebar-link">
+                    <span class="link-icon">👤</span>
+                    <span>Full Profile</span>
+                </a>
+                <a href="{{ url_for('main.logout') }}" class="sidebar-link logout">
+                    <span class="link-icon">🚪</span>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Chat Area -->
+    <main class="chat-main">
+        <div class="chat-header">
+            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            <div class="chat-header-info">
+                <h1>🥗 Your AI Nutrition Coach</h1>
+                <p>Ask me anything about health, fitness, and nutrition!</p>
+            </div>
+            <button class="clear-chat-btn" id="clearChatBtn" title="Clear Chat History">🗑️</button>
+        </div>
+        
+        <div class="chat-messages" id="chatMessages">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message {{ message.role }}">
+                        <div class="message-content-wrapper">
+                            <div class="message-avatar">
+                                {% if message.role == 'user' %}
+                                    {{ user.name[0].upper() if user.name else 'U' }}
+                                {% else %}
+                                    🥗
+                                {% endif %}
+                            </div>
+                            <div class="message-content">
+                                {{ message.content }}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <!-- Welcome Screen -->
+                <div class="welcome-screen">
+                    <div class="welcome-icon">👋</div>
+                    <h2>Hi {{ user.name.split()[0] if user.name else 'there' }}!</h2>
+                    <p>I'm your personal AI nutrition coach. I've reviewed your health profile and I'm ready to help you achieve your goals. Ask me anything!</p>
+                    
+                    <div class="suggestion-grid">
+                        <div class="suggestion-card" onclick="useSuggestion('What should I eat for breakfast to lose weight?')">
+                            <h4>🍳 Breakfast Ideas</h4>
+                            <p>Healthy breakfast for weight loss</p>
+                        </div>
+                        
+                        <div class="suggestion-card" onclick="useSuggestion('Create a 7-day meal plan for my goal')">
+                            <h4>📅 Meal Plan</h4>
+                            <p>7-day personalized meal plan</p>
+                        </div>
+                        
+                        <div class="suggestion-card" onclick="useSuggestion('How many calories should I eat daily?')">
+                            <h4>🔥 Calorie Target</h4>
+                            <p>Daily calorie recommendations</p>
+                        </div>
+                        
+                        <div class="suggestion-card" onclick="useSuggestion('What exercises help me reach my goal?')">
+                            <h4>💪 Workout Tips</h4>
+                            <p>Best exercises for your goal</p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Typing Indicator -->
+            <div class="message assistant" id="typingIndicator" style="display: none;">
+                <div class="message-content-wrapper">
+                    <div class="message-avatar">🥗</div>
+                    <div class="message-content">
+                        <div class="typing-indicator">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <form id="chatForm" class="chat-form">
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        name="message" 
+                        placeholder="Ask about nutrition, fitness, or health..." 
+                        autocomplete="off"
+                        required
+                    >
+                    <button type="submit" id="sendBtn">
+                        <span class="btn-text">Send</span>
+                        <span class="btn-icon">🚀</span>
+                    </button>
+                </form>
+                <p class="chat-disclaimer">
+                    NutriAI provides general health information. Always consult a healthcare professional for medical advice.
+                </p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+/* ===== Chat Layout ===== */
+.chat-layout {
+    display: flex;
+    height: 100vh;
+    background: var(--bg-primary);
+}
+
+/* ===== Sidebar ===== */
+.chat-sidebar {
+    width: 300px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-logo {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.sidebar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+/* New Chat Button */
+.new-chat-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+
+.new-chat-btn:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+.btn-icon {
+    font-size: 1.2rem;
+}
+
+/* Profile Card */
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.profile-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent) 0%, #34d399 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.25rem;
+    flex-shrink: 0;
+}
+
+.profile-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.profile-name {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-email {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-edit {
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.profile-edit:hover {
+    opacity: 1;
+}
+
+/* Profile Stats */
+.profile-stats {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 1rem;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.stat-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    text-align: right;
+}
+
+.stat-value.bmi-underweight { color: #f59e0b; }
+.stat-value.bmi-normal { color: var(--accent); }
+.stat-value.bmi-overweight { color: #f59e0b; }
+.stat-value.bmi-obese { color: #ef4444; }
+
+/* Info Boxes */
+.profile-info-box {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    padding: 0.875rem;
+    font-size: 0.85rem;
+}
+
+.profile-info-box.alert {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.info-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--text-primary);
+}
+
+.info-value {
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.daily-targets-card {
+    background: linear-gradient(180deg, rgba(16, 163, 127, 0.12), rgba(16, 163, 127, 0.04));
+    border: 1px solid rgba(16, 163, 127, 0.22);
+    border-radius: var(--radius);
+    padding: 1rem;
+}
+
+.daily-targets-card h4 {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.target-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.target-row:last-child {
+    border-bottom: none;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.sidebar-link:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.sidebar-link.logout:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.link-icon {
+    font-size: 1.1rem;
+}
+
+/* ===== Main Chat Area ===== */
+.chat-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.chat-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.mobile-menu-btn {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+.chat-header-info h1 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.chat-header-info p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0 0 0;
+}
+
+.clear-chat-btn {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.clear-chat-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+/* Chat Messages */
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+    scroll-behavior: smooth;
+}
+
+.message {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.user {
+    background: var(--user-msg-bg);
+}
+
+.message.assistant {
+    background: var(--assistant-msg-bg);
+}
+
+.message-content-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    gap: 1.5rem;
+}
+
+.message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+.message.user .message-avatar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.message.assistant .message-avatar {
+    background: linear-gradient(135deg, var(--accent) 0%, #34d399 100%);
+    color: white;
+}
+
+.message-content {
+    flex: 1;
+    padding-top: 0.25rem;
+    line-height: 1.7;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.message-content p {
+    margin-bottom: 1rem;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+/* Chat Input */
+.chat-input-container {
+    padding: 1.5rem 0;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border);
+}
+
+.chat-input-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.chat-form {
+    display: flex;
+    gap: 0.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem;
+    box-shadow: var(--shadow);
+    transition: all 0.3s;
+}
+
+.chat-form:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(16, 163, 127, 0.2);
+}
+
+.chat-form input {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: transparent;
+    color: var(--text-primary);
+}
+
+.chat-form input:focus {
+    outline: none;
+}
+
+.chat-form input::placeholder {
+    color: var(--text-muted);
+}
+
+.chat-form button {
+    padding: 0.75rem 1.5rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.chat-form button:hover {
+    background: var(--accent-hover);
+}
+
+.chat-form button:disabled {
+    background: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.chat-disclaimer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+/* Welcome Screen */
+.welcome-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 2rem;
+}
+
+.welcome-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.welcome-screen h2 {
+    font-size: 1.75rem;
+    margin-bottom: 0.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.welcome-screen p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 500px;
+    line-height: 1.6;
+}
+
+.suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    max-width: 700px;
+    width: 100%;
+}
+
+.suggestion-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+}
+
+.suggestion-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow);
+    transform: translateY(-2px);
+}
+
+.suggestion-card h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.suggestion-card p {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+    display: flex;
+    gap: 4px;
+    padding: 0.5rem 0;
+}
+
+.typing-indicator span {
+    width: 8px;
+    height: 8px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    animation: typing 1.4s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% { transform: translateY(0); }
+    30% { transform: translateY(-8px); }
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px) {
+    .chat-sidebar {
+        width: 260px;
+    }
+}
+
+@media (max-width: 768px) {
+    .chat-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 1000;
+        transform: translateX(-100%);
+    }
+    
+    .chat-sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .sidebar-toggle {
+        display: block;
+    }
+    
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .chat-header-info h1 {
+        font-size: 1rem;
+    }
+    
+    .chat-header-info p {
+        display: none;
+    }
+    
+    .message-content-wrapper {
+        padding: 0 1rem;
+        gap: 1rem;
+    }
+    
+    .chat-input-wrapper {
+        padding: 0 1rem;
+    }
+    
+    .chat-form {
+        flex-direction: column;
+    }
+    
+    .chat-form button {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .suggestion-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profile-stats {
+        font-size: 0.8rem;
+    }
+}
+
+/* Overlay for mobile sidebar */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+</style>
+
+<script>
+// Suggestion click handler
+function useSuggestion(text) {
+    const input = document.getElementById('userInput');
+    input.value = text;
+    input.focus();
+}
+
+// Chat functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const csrfToken = '{{ csrf_token }}';
+    const chatForm = document.getElementById('chatForm');
+    const chatMessages = document.getElementById('chatMessages');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const clearChatBtn = document.getElementById('clearChatBtn');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const chatSidebar = document.querySelector('.chat-sidebar');
+    
+    // Create overlay for mobile
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+    
+    // Toggle sidebar (mobile)
+    function toggleSidebar() {
+        chatSidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+    
+    if (sidebarToggle) sidebarToggle.addEventListener('click', toggleSidebar);
+    if (mobileMenuBtn) mobileMenuBtn.addEventListener('click', toggleSidebar);
+    overlay.addEventListener('click', toggleSidebar);
+    
+    if (!chatForm || !chatMessages || !userInput) {
+        return;
+    }
+    
+    // Auto-scroll to bottom
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    // Add message to chat
+    function addMessage(content, role) {
+        // Remove welcome screen if exists
+        const welcomeScreen = document.querySelector('.welcome-screen');
+        if (welcomeScreen) {
+            welcomeScreen.remove();
+        }
+        
+        const userInitial = '{{ user.name[0].upper() if user.name else "U" }}';
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${role}`;
+        messageDiv.innerHTML = `
+            <div class="message-content-wrapper">
+                <div class="message-avatar">${role === 'user' ? userInitial : '🥗'}</div>
+                <div class="message-content">${content}</div>
+            </div>
+        `;
+        
+        // Insert before typing indicator
+        chatMessages.insertBefore(messageDiv, typingIndicator);
+        scrollToBottom();
+    }
+    
+    // Show/hide typing indicator
+    function showTyping(show) {
+        typingIndicator.style.display = show ? 'block' : 'none';
+        if (show) {
+            scrollToBottom();
+        }
+    }
+    
+    // Set loading state
+    function setLoading(loading) {
+        sendBtn.disabled = loading;
+        sendBtn.innerHTML = loading ? 'Sending...' : '<span class="btn-text">Send</span> <span class="btn-icon">🚀</span>';
+        userInput.disabled = loading;
+    }
+    
+    // Handle form submit
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const message = userInput.value.trim();
+        if (!message) return;
+        
+        // Add user message to UI
+        addMessage(message, 'user');
+        userInput.value = '';
+        setLoading(true);
+        showTyping(true);
+        
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            const data = await response.json();
+            
+            showTyping(false);
+            
+            if (data.success) {
+                addMessage(data.response, 'assistant');
+            } else {
+                addMessage('⚠️ Error: ' + (data.error || 'Failed to get response'), 'assistant');
+            }
+        } catch (error) {
+            showTyping(false);
+            addMessage('⚠️ Error: Connection failed. Please try again.', 'assistant');
+            console.error('Chat error:', error);
+        } finally {
+            setLoading(false);
+            userInput.focus();
+        }
+    });
+    
+    // Clear chat history
+    if (clearChatBtn) {
+        clearChatBtn.addEventListener('click', async function() {
+            if (!confirm('Are you sure you want to clear your chat history?')) return;
+            
+            try {
+                const response = await fetch('/api/chat-history', {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    location.reload();
+                }
+            } catch (error) {
+                alert('Failed to clear chat history');
+            }
+        });
+    }
+    
+    // Initial scroll
+    scrollToBottom();
+    
+    // Focus input on load
+    userInput.focus();
+});
+</script>
+{% endblock %}

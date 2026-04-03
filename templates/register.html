@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Register - NutriAI{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">🥗</div>
+                <h1>Create Your Account</h1>
+                <p>Join thousands of users on their health journey</p>
+            </div>
+            
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" class="auth-form" id="registerForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <div class="form-group">
+                    <label for="name">Full Name <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        required 
+                        placeholder="John Doe"
+                        value="{{ name if name else '' }}"
+                        autocomplete="name"
+                    >
+                    <small>Enter your full name</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email Address <span class="required">*</span></label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        required 
+                        placeholder="john@example.com"
+                        value="{{ email if email else '' }}"
+                        autocomplete="email"
+                    >
+                    <small>We'll never share your email</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password <span class="required">*</span></label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required 
+                        placeholder="••••••••"
+                        minlength="6"
+                        autocomplete="new-password"
+                    >
+                    <small>Minimum 6 characters</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password <span class="required">*</span></label>
+                    <input 
+                        type="password" 
+                        id="confirm_password" 
+                        name="confirm_password" 
+                        required 
+                        placeholder="••••••••"
+                        autocomplete="new-password"
+                    >
+                    <small>Re-enter your password</small>
+                </div>
+                
+                <div class="form-checkbox">
+                    <input type="checkbox" id="terms" name="terms" required>
+                    <label for="terms">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-lg btn-block">
+                    Create Account →
+                </button>
+            </form>
+            
+            <div class="auth-footer">
+                <p>Already have an account? <a href="{{ url_for('main.login') }}">Log In</a></p>
+            </div>
+            
+            <div class="auth-benefits">
+                <div class="benefit-item">
+                    <span class="benefit-icon">✓</span>
+                    <span>Free AI nutrition coaching</span>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">✓</span>
+                    <span>Personalized meal plans</span>
+                </div>
+                <div class="benefit-item">
+                    <span class="benefit-icon">✓</span>
+                    <span>Track your progress</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+/* Auth Section Styles */
+.auth-section {
+    min-height: calc(100vh - 140px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1rem;
+    background: var(--bg-primary);
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 480px;
+}
+
+.auth-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    padding: 2.5rem;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-logo {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.auth-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.auth-header p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+/* Flash Messages */
+.flash-message {
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.flash-success {
+    background: rgba(16, 163, 127, 0.1);
+    border: 1px solid rgba(16, 163, 127, 0.3);
+    color: var(--accent);
+}
+
+.flash-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.flash-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
+
+/* Form Styles */
+.auth-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.auth-form input[type="text"],
+.auth-form input[type="email"],
+.auth-form input[type="password"] {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: all 0.3s;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(16, 163, 127, 0.15);
+}
+
+.auth-form small {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.required {
+    color: #ef4444;
+    font-weight: 700;
+}
+
+/* Checkbox */
+.form-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+}
+
+.form-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.form-checkbox label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.form-checkbox a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.form-checkbox a:hover {
+    text-decoration: underline;
+}
+
+/* Submit Button */
+.auth-form .btn-block {
+    margin-top: 1.5rem;
+}
+
+/* Auth Footer */
+.auth-footer {
+    text-align: center;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.auth-footer p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.auth-footer a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+/* Benefits List */
+.auth-benefits {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.benefit-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.benefit-icon {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 520px) {
+    .auth-card {
+        padding: 2rem 1.5rem;
+    }
+    
+    .auth-header h1 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
+<script>
+// Password match validation
+document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+    
+    if (password !== confirmPassword) {
+        e.preventDefault();
+        alert('Passwords do not match. Please try again.');
+        document.getElementById('confirm_password').focus();
+    }
+});
+
+// Real-time password match check
+document.getElementById('confirm_password').addEventListener('input', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    
+    if (confirmPassword && password !== confirmPassword) {
+        this.style.borderColor = '#ef4444';
+    } else {
+        this.style.borderColor = 'var(--border)';
+    }
+});
+</script>
+{% endblock %}
