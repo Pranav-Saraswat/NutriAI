@@ -33,11 +33,15 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      test:
+        [
+          "CMD-SHELL",
+          "echo \"db.runCommand({ ping: 1 }).ok\" | mongosh mongodb://localhost:27017/admin --quiet | grep 1 >/dev/null"
+        ]
       interval: 10s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 40s
 
 volumes:
   mongodb_data:
