@@ -11,7 +11,11 @@ INSTALL_CLOUDFLARED=false
 INSTALL_LOCAL_MONGO=false
 CREATE_ENV=false
 START_DOCKER_STACK=false
+START_TUNNEL=false
+USE_NAMED_TUNNEL=false
 ALL=false
+TUNNEL_URL_FILE=""
+APP_URL=""
 
 log() {
   printf '\n[%s] %s\n' "$(date +'%H:%M:%S')" "$*"
@@ -33,12 +37,17 @@ Options:
   --install-cloudflared Install cloudflared on Ubuntu/Debian
   --install-mongo-local Install MongoDB Community locally on Ubuntu or Debian 11
   --start-docker        Start the app stack with docker compose up --build -d
+  --start-tunnel        Start a Cloudflare Tunnel for the app
+  --named-tunnel        Use CLOUDFLARE_TUNNEL_TOKEN for a named Cloudflare Tunnel
+  --tunnel-url URL      Local app URL to expose with Cloudflare Tunnel
   --help                Show this help text
 
 Examples:
   ./scripts/setup-dev.sh --all
   ./scripts/setup-dev.sh --create-env --install-docker --install-cloudflared
   ./scripts/setup-dev.sh --install-mongo-local
+  ./scripts/setup-dev.sh --start-tunnel
+  ./scripts/setup-dev.sh --start-tunnel --named-tunnel
 EOF
 }
 
@@ -184,6 +193,60 @@ start_docker_stack() {
   log "Docker stack started. App should be available on http://localhost:5000"
 }
 
+start_cloudflare_tunnel() {
+  need_cmd cloudflared
+
+  local env_tunnel_url_file="${TUNNEL_URL_FILE:-$PROJECT_ROOT/.cloudflare_url}"
+  local env_app_url="${APP_URL:-http://localhost:5000}"
+
+  if [[ -f "$ENV_FILE" ]]; then
+    set -a
+    # shellcheck disable=SC1090
+    source "$ENV_FILE"
+    set +a
+  fi
+
+  local tunnel_url_file="${TUNNEL_URL_FILE:-$env_tunnel_url_file}"
+  local app_url="${APP_URL:-$env_app_url}"
+
+  if [[ "$tunnel_url_file" != /* ]]; then
+    tunnel_url_file="$PROJECT_ROOT/$tunnel_url_file"
+  fi
+
+  cleanup_tunnel_file() {
+    rm -f "$tunnel_url_file"
+  }
+
+  trap cleanup_tunnel_file EXIT INT TERM
+
+  if [[ "$USE_NAMED_TUNNEL" == true ]]; then
+    if [[ -z "${CLOUDFLARE_TUNNEL_TOKEN:-}" ]]; then
+      fail "CLOUDFLARE_TUNNEL_TOKEN is required for --named-tunnel."
+    fi
+
+    if [[ -n "${TUNNEL_PUBLIC_URL:-}" ]]; then
+      printf '%s\n' "$TUNNEL_PUBLIC_URL" > "$tunnel_url_file"
+      log "Saved named tunnel URL to $tunnel_url_file"
+    else
+      log "TUNNEL_PUBLIC_URL is not set, so Flask auto-redirect will not know your named tunnel URL."
+    fi
+
+    log "Starting named Cloudflare Tunnel using token from environment."
+    exec cloudflared tunnel --no-autoupdate run --token "$CLOUDFLARE_TUNNEL_TOKEN"
+  fi
+
+  log "Starting Cloudflare Quick Tunnel for $app_url"
+  rm -f "$tunnel_url_file"
+  cloudflared tunnel --url "$app_url" 2>&1 | while IFS= read -r line; do
+    printf '%s\n' "$line"
+    if [[ ! -f "$tunnel_url_file" && "$line" =~ https://[A-Za-z0-9.-]+trycloudflare.com ]]; then
+      printf '%s\n' "${BASH_REMATCH[0]}" > "$tunnel_url_file"
+      log "Saved tunnel URL to $tunnel_url_file"
+    fi
+  done
+  exit ${PIPESTATUS[0]}
+}
+
 main() {
   require_linux
 
@@ -200,6 +263,13 @@ main() {
       --install-cloudflared) INSTALL_CLOUDFLARED=true ;;
       --install-mongo-local) INSTALL_LOCAL_MONGO=true ;;
       --start-docker) START_DOCKER_STACK=true ;;
+      --start-tunnel) START_TUNNEL=true ;;
+      --named-tunnel) START_TUNNEL=true; USE_NAMED_TUNNEL=true ;;
+      --tunnel-url)
+        shift
+        APP_URL="${1:-}"
+        [[ -n "$APP_URL" ]] || fail "Missing value for --tunnel-url"
+        ;;
       --help|-h) usage; exit 0 ;;
       *) fail "Unknown option: $1" ;;
     esac
@@ -218,6 +288,7 @@ main() {
   $INSTALL_CLOUDFLARED && install_cloudflared
   $INSTALL_LOCAL_MONGO && install_local_mongo
   $START_DOCKER_STACK && start_docker_stack
+  $START_TUNNEL && start_cloudflare_tunnel
 
   log "Setup complete."
 }

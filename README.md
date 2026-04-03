@@ -8,7 +8,7 @@ NutriAI is a Flask-based AI nutrition assistant with:
 - MongoDB-backed user and chat storage
 - Daily calorie, protein, water, and step targets
 - Docker support for local full-stack setup
-- Optional Cloudflare Tunnel scripts for public sharing
+- Optional Cloudflare Tunnel support for public sharing
 
 ## Tech Stack
 
@@ -46,7 +46,6 @@ NutriAI/
 ├── docker-compose.yml
 ├── Dockerfile
 ├── scripts/
-│   ├── cloudflare-tunnel.sh
 │   └── setup-dev.sh
 ├── requirements.txt
 ├── run.py
@@ -166,6 +165,7 @@ Useful variants:
 ./scripts/setup-dev.sh --create-env --install-docker --install-cloudflared
 ./scripts/setup-dev.sh --install-mongo-local
 ./scripts/setup-dev.sh --start-docker
+./scripts/setup-dev.sh --start-tunnel
 ```
 
 Notes:
@@ -203,7 +203,7 @@ You can expose the local app publicly using Cloudflare Tunnel.
 ### Quick tunnel for testing
 
 ```bash
-./scripts/cloudflare-tunnel.sh
+./scripts/setup-dev.sh --start-tunnel
 ```
 
 This exposes:
@@ -223,7 +223,7 @@ will automatically redirect to the live Cloudflare Tunnel URL.
 You can also point it to a custom local URL:
 
 ```bash
-./scripts/cloudflare-tunnel.sh --url http://localhost:5000
+./scripts/setup-dev.sh --start-tunnel --tunnel-url http://localhost:5000
 ```
 
 ### Named tunnel with token
@@ -238,7 +238,7 @@ TUNNEL_PUBLIC_URL=https://your-public-hostname.example.com
 Then run:
 
 ```bash
-./scripts/cloudflare-tunnel.sh --named
+./scripts/setup-dev.sh --start-tunnel --named-tunnel
 ```
 
 This is the better path for a stable hostname.
@@ -253,7 +253,7 @@ TUNNEL_AUTO_REDIRECT=True
 
 How it works:
 
-- `scripts/cloudflare-tunnel.sh` writes the active public URL to `.cloudflare_url`
+- `scripts/setup-dev.sh --start-tunnel` writes the active public URL to `.cloudflare_url`
 - Flask reads that file on local requests
 - requests to `localhost` and `127.0.0.1` redirect to the tunnel URL
 
