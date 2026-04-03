@@ -29,3 +29,4 @@ build/
 mongodb_data/
 instance/
 *.log
+.cloudflare_url

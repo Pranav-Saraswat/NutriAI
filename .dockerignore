@@ -18,3 +18,4 @@ mongodb_data/
 dist/
 build/
 *.egg-info/
+.cloudflare_url

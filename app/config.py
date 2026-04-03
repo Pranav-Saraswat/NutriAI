@@ -1,5 +1,6 @@
 import os
 from datetime import timedelta
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -35,6 +36,12 @@ class Config:
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = timedelta(days=int(os.environ.get('SESSION_LIFETIME_DAYS', 30)))
+    TUNNEL_AUTO_REDIRECT = env_bool('TUNNEL_AUTO_REDIRECT', False)
+    TUNNEL_PUBLIC_URL = os.environ.get('TUNNEL_PUBLIC_URL', '').strip()
+    TUNNEL_URL_FILE = os.environ.get(
+        'TUNNEL_URL_FILE',
+        str(Path(__file__).resolve().parent.parent / '.cloudflare_url')
+    )
 
 
 class DevelopmentConfig(Config):

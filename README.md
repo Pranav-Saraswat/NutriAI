@@ -212,6 +212,14 @@ This exposes:
 http://localhost:5000
 ```
 
+When `TUNNEL_AUTO_REDIRECT=True` and the tunnel script is running, opening:
+
+```text
+http://127.0.0.1:5000
+```
+
+will automatically redirect to the live Cloudflare Tunnel URL.
+
 You can also point it to a custom local URL:
 
 ```bash
@@ -224,6 +232,7 @@ Add this to `.env`:
 
 ```text
 CLOUDFLARE_TUNNEL_TOKEN=your_token_here
+TUNNEL_PUBLIC_URL=https://your-public-hostname.example.com
 ```
 
 Then run:
@@ -233,6 +242,27 @@ Then run:
 ```
 
 This is the better path for a stable hostname.
+
+## Automatic Redirect To Tunnel
+
+If you want local Flask URLs to bounce to the public Cloudflare URL automatically, keep this enabled in `.env`:
+
+```text
+TUNNEL_AUTO_REDIRECT=True
+```
+
+How it works:
+
+- `scripts/cloudflare-tunnel.sh` writes the active public URL to `.cloudflare_url`
+- Flask reads that file on local requests
+- requests to `localhost` and `127.0.0.1` redirect to the tunnel URL
+
+Notes:
+
+- only local browser-style `GET` and `HEAD` requests are redirected
+- `/api/*` routes are not redirected
+- when the tunnel process stops, the URL file is removed automatically
+- for named tunnels, set `TUNNEL_PUBLIC_URL` so Flask knows the stable public URL
 
 ## Environment Variables
 
@@ -253,6 +283,9 @@ Common variables used by the app:
 | `CORS_ORIGINS` | Allowed frontend origins | `http://127.0.0.1:5000,http://localhost:5000` |
 | `CLOUDFLARE_TUNNEL_TOKEN` | Token for a named Cloudflare Tunnel | `token-from-cloudflare` |
 | `APP_URL` | Local URL to expose with quick tunnel | `http://localhost:5000` |
+| `TUNNEL_PUBLIC_URL` | Public hostname for named tunnel redirect | `https://app.example.com` |
+| `TUNNEL_AUTO_REDIRECT` | Redirect localhost requests to tunnel URL | `True` |
+| `TUNNEL_URL_FILE` | File used to store active tunnel URL | `.cloudflare_url` |
 
 ## API Endpoints
 
