@@ -969,12 +969,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ message: message })
             });
-            
-            const data = await response.json();
+
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await response.json()
+                : {
+                    success: false,
+                    error: await response.text() || 'Unexpected server response'
+                };
             
             showTyping(false);
             
-            if (data.success) {
+            if (response.ok && data.success) {
                 addMessage(data.response, 'assistant');
             } else {
                 addMessage('⚠️ Error: ' + (data.error || 'Failed to get response'), 'assistant');
@@ -1001,10 +1007,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         'X-CSRFToken': csrfToken
                     }
                 });
-                const data = await response.json();
+                const contentType = response.headers.get('content-type') || '';
+                const data = contentType.includes('application/json')
+                    ? await response.json()
+                    : {
+                        success: false,
+                        error: await response.text() || 'Unexpected server response'
+                    };
                 
                 if (data.success) {
                     location.reload();
+                } else {
+                    alert(data.error || 'Failed to clear chat history');
                 }
             } catch (error) {
                 alert('Failed to clear chat history');

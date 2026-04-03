@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
 from .models import db, User, ChatMessage
 from .services import llm_service
 from datetime import datetime
@@ -248,49 +248,62 @@ def chat_interface():
 @login_required
 def api_chat():
     """API endpoint for chat messages."""
-    data = request.get_json(silent=True) or {}
-    user_message = data.get('message', '').strip()
-    
-    if not user_message:
-        return jsonify({'success': False, 'error': 'Empty message'}), 400
-    
-    user = get_current_user()
-    if not user:
-        return jsonify({'success': False, 'error': 'User not found'}), 404
-    
-    # Save user message
-    ChatMessage.create(
-        user_id=user.id,
-        role='user',
-        content=user_message
-    )
-    
-    # Get chat history for context
-    chat_history = [
-        {'role': msg.role, 'content': msg.content}
-        for msg in ChatMessage.list_for_user(user.id, limit=15, ascending=True)
-    ]
-    
-    # Get AI response
-    profile_summary = user.get_profile_summary()
-    result = llm_service.chat(user_message, profile_summary, chat_history)  # ✅ CHANGED: ollama_service → llm_service
-    
-    if result['success']:
-        # Save AI response
+    try:
+        if not db.available:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection is unavailable. Please try again after MongoDB is running.'
+            }), 503
+
+        data = request.get_json(silent=True) or {}
+        user_message = data.get('message', '').strip()
+
+        if not user_message:
+            return jsonify({'success': False, 'error': 'Empty message'}), 400
+
+        user = get_current_user()
+        if not user:
+            return jsonify({'success': False, 'error': 'User not found'}), 404
+
+        # Save user message
         ChatMessage.create(
             user_id=user.id,
-            role='assistant',
-            content=result['response']
+            role='user',
+            content=user_message
         )
-        
-        return jsonify({
-            'success': True,
-            'response': result['response']
-        })
-    else:
+
+        # Get chat history for context
+        chat_history = [
+            {'role': msg.role, 'content': msg.content}
+            for msg in ChatMessage.list_for_user(user.id, limit=15, ascending=True)
+        ]
+
+        # Get AI response
+        profile_summary = user.get_profile_summary()
+        result = llm_service.chat(user_message, profile_summary, chat_history)
+
+        if result['success']:
+            # Save AI response
+            ChatMessage.create(
+                user_id=user.id,
+                role='assistant',
+                content=result['response']
+            )
+
+            return jsonify({
+                'success': True,
+                'response': result['response']
+            })
+
         return jsonify({
             'success': False,
             'error': result['error'] or 'AI service unavailable'
+        }), 502
+    except Exception:
+        current_app.logger.exception('Unexpected error while processing chat request')
+        return jsonify({
+            'success': False,
+            'error': 'Something went wrong while processing your message. Please try again.'
         }), 500
 
 
@@ -345,8 +358,20 @@ def profile():
 @login_required
 def clear_chat_history():
     """Clear user's chat history."""
-    ChatMessage.delete_for_user(session['user_id'])
-    return jsonify({'success': True, 'message': 'Chat history cleared'})
+    try:
+        if not db.available:
+            return jsonify({
+                'success': False,
+                'error': 'Database connection is unavailable. Please try again after MongoDB is running.'
+            }), 503
+        ChatMessage.delete_for_user(session['user_id'])
+        return jsonify({'success': True, 'message': 'Chat history cleared'})
+    except Exception:
+        current_app.logger.exception('Unexpected error while clearing chat history')
+        return jsonify({
+            'success': False,
+            'error': 'Failed to clear chat history. Please try again.'
+        }), 500
 
 
 def validate_profile_form(form, require_name=False):

@@ -50,10 +50,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({ message: message })
             });
+
+            const contentType = response.headers.get('content-type') || '';
+            const data = contentType.includes('application/json')
+                ? await response.json()
+                : {
+                    success: false,
+                    error: await response.text() || 'Unexpected server response'
+                };
             
-            const data = await response.json();
-            
-            if (data.success) {
+            if (response.ok && data.success) {
                 addMessage(data.response, 'assistant');
             } else {
                 addMessage('Error: ' + (data.error || 'Failed to get response'), 'assistant');
