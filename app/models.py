@@ -38,8 +38,10 @@ class MongoDB:
 
     def _ensure_indexes(self):
         """Create the indexes the app relies on."""
-        self.users.create_index([("email", ASCENDING)], unique=True)
-        self.chat_messages.create_index([("user_id", ASCENDING), ("created_at", ASCENDING)])
+        if self.database is None:
+            raise RuntimeError("MongoDB has not been initialized.")
+        self.database["users"].create_index([("email", ASCENDING)], unique=True)
+        self.database["chat_messages"].create_index([("user_id", ASCENDING), ("created_at", ASCENDING)])
 
     def ensure_connection(self):
         """Refresh connection status and indexes if MongoDB becomes available later."""
