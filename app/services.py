@@ -113,23 +113,23 @@ USER PROFILE DATA:
         return str(content).strip()
 
     def chat(self, user_message, user_profile_summary, chat_history=None):
-        client = self._get_client()
-        if not client:
-            error_message = 'Groq SDK is not installed.' if Groq is None else 'Groq client not initialized.'
-            return {'success': False, 'response': None, 'error': error_message}
-        
         try:
+            client = self._get_client()
+            if not client:
+                error_message = 'Groq SDK is not installed.' if Groq is None else 'Groq client not initialized.'
+                return {'success': False, 'response': None, 'error': error_message}
+            
             messages = [
                 {"role": "system", "content": self._get_system_prompt(user_profile_summary)}
             ]
             
-            # Add chat history
+            # Add chat history (which already contains the new user message)
             if chat_history:
                 for msg in chat_history[-10:]:
                     messages.append({"role": msg['role'], "content": msg['content']})
-            
-            # Add user message
-            messages.append({"role": "user", "content": user_message})
+            else:
+                # Add user message if chat history isn't provided
+                messages.append({"role": "user", "content": user_message})
             
             completion = client.chat.completions.create(
                 model=self.model,
