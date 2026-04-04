@@ -140,7 +140,7 @@
                                     🥗
                                 {% endif %}
                             </div>
-                            <div class="message-content">
+                            <div class="message-content markdown-body" data-raw-content="{{ message.content | e }}">
                                 {{ message.content }}
                             </div>
                         </div>
@@ -846,6 +846,65 @@
     }
 }
 
+/* Premium Markdown Styles */
+.markdown-body table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+}
+
+.markdown-body th, .markdown-body td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+.markdown-body th {
+    background: rgba(16, 163, 127, 0.1);
+    color: var(--accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.markdown-body tr:last-child td {
+    border-bottom: none;
+}
+
+.markdown-body tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+.markdown-body ul, .markdown-body ol {
+    margin: 1rem 0;
+    padding-left: 1.5rem;
+}
+
+.markdown-body li {
+    margin-bottom: 0.5rem;
+}
+
+.markdown-body strong {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.markdown-body p {
+    margin-bottom: 1rem;
+    line-height: 1.7;
+}
+
+.markdown-body p:last-child {
+    margin-bottom: 0;
+}
+
 /* Overlay for mobile sidebar */
 .sidebar-overlay {
     display: none;
@@ -863,6 +922,7 @@
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
 // Suggestion click handler
 function useSuggestion(text) {
@@ -920,10 +980,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${role}`;
+        
+        let displayContent = content;
+        if (role === 'assistant' && typeof marked !== 'undefined') {
+            displayContent = marked.parse(content);
+        } else if (role === 'user') {
+            displayContent = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+        
         messageDiv.innerHTML = `
             <div class="message-content-wrapper">
                 <div class="message-avatar">${role === 'user' ? userInitial : '🥗'}</div>
-                <div class="message-content">${content}</div>
+                <div class="message-content markdown-body">${displayContent}</div>
             </div>
         `;
         
@@ -1028,6 +1096,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial scroll
     scrollToBottom();
+    
+    // Render existing markdown for assistant messages
+    if (typeof marked !== 'undefined') {
+        document.querySelectorAll('.message.assistant .markdown-body[data-raw-content]').forEach(el => {
+            el.innerHTML = marked.parse(el.getAttribute('data-raw-content'));
+        });
+    }
     
     // Focus input on load
     userInput.focus();
