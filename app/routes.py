@@ -3,6 +3,7 @@ from .models import db, User, ChatMessage
 from .services import llm_service
 from datetime import datetime
 from functools import wraps
+from bson.errors import InvalidDocument
 import math
 from pymongo.errors import PyMongoError
 
@@ -267,6 +268,13 @@ def api_chat():
         if not user:
             return jsonify({'success': False, 'error': 'User not found'}), 404
 
+        # Get recent chat history for context, keeping chronological order.
+        chat_history = [
+            {'role': msg.role, 'content': msg.content}
+            for msg in ChatMessage.list_for_user(user.id, limit=15, ascending=False)
+        ]
+        chat_history.append({'role': 'user', 'content': user_message})
+
         # Save user message
         ChatMessage.create(
             user_id=user.id,
@@ -274,27 +282,29 @@ def api_chat():
             content=user_message
         )
 
-        # Get chat history for context
-        chat_history = [
-            {'role': msg.role, 'content': msg.content}
-            for msg in ChatMessage.list_for_user(user.id, limit=15, ascending=True)
-        ]
-
         # Get AI response
         profile_summary = user.get_profile_summary()
         result = llm_service.chat(user_message, profile_summary, chat_history)
 
         if result['success']:
+            assistant_response = (result.get('response') or '').strip()
+            if not assistant_response:
+                current_app.logger.warning('LLM service reported success with an empty response payload')
+                return jsonify({
+                    'success': False,
+                    'error': 'The AI service returned an empty response. Please try again.'
+                }), 502
+
             # Save AI response
             ChatMessage.create(
                 user_id=user.id,
                 role='assistant',
-                content=result['response']
+                content=assistant_response
             )
 
             return jsonify({
                 'success': True,
-                'response': result['response']
+                'response': assistant_response
             })
 
         return jsonify({
@@ -307,6 +317,12 @@ def api_chat():
             'success': False,
             'error': 'Database connection is unavailable. Please try again after MongoDB is running.'
         }), 503
+    except InvalidDocument:
+        current_app.logger.exception('Invalid document generated while processing chat request')
+        return jsonify({
+            'success': False,
+            'error': 'The AI returned data in an unexpected format. Please try again.'
+        }), 502
     except Exception:
         current_app.logger.exception('Unexpected error while processing chat request')
         return jsonify({

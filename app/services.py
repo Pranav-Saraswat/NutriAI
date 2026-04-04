@@ -84,6 +84,34 @@ USER PROFILE DATA:
 {user_profile_summary}
 """
 
+    def _normalize_response_content(self, content):
+        """Convert Groq response content into a plain string."""
+        if isinstance(content, str):
+            return content.strip()
+
+        if isinstance(content, list):
+            parts = []
+            for item in content:
+                if isinstance(item, str):
+                    parts.append(item)
+                    continue
+                if not isinstance(item, dict):
+                    continue
+                text = item.get('text') or item.get('content')
+                if isinstance(text, str):
+                    parts.append(text)
+            return "\n".join(part.strip() for part in parts if part and part.strip()).strip()
+
+        if isinstance(content, dict):
+            text = content.get('text') or content.get('content')
+            if isinstance(text, str):
+                return text.strip()
+
+        if content is None:
+            return ""
+
+        return str(content).strip()
+
     def chat(self, user_message, user_profile_summary, chat_history=None):
         client = self._get_client()
         if not client:
@@ -113,7 +141,14 @@ USER PROFILE DATA:
                 stop=None,
             )
             
-            ai_response = completion.choices[0].message.content.strip()
+            ai_response = self._normalize_response_content(completion.choices[0].message.content)
+            if not ai_response:
+                current_app.logger.warning("Groq returned an empty response payload.")
+                return {
+                    'success': False,
+                    'response': None,
+                    'error': 'The AI service returned an empty response. Please try again.'
+                }
             
             return {
                 'success': True, 
@@ -122,6 +157,7 @@ USER PROFILE DATA:
             }
             
         except Exception as e:
+            current_app.logger.exception("Groq chat request failed")
             return {'success': False, 'response': None, 'error': str(e)}
     
     def test_connection(self):
