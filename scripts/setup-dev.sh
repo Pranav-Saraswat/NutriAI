@@ -11,6 +11,7 @@ INSTALL_CLOUDFLARED=false
 INSTALL_LOCAL_MONGO=false
 CREATE_ENV=false
 START_DOCKER_STACK=false
+START_FLASK=false
 START_TUNNEL=false
 USE_NAMED_TUNNEL=false
 ALL=false
@@ -37,6 +38,7 @@ Options:
   --install-cloudflared Install cloudflared on Ubuntu/Debian
   --install-mongo-local Install MongoDB Community locally on Ubuntu or Debian 11
   --start-docker        Start the app stack with docker compose up --build -d
+  --start-flask         Start the Flask app locally via python run.py
   --start-tunnel        Start a Cloudflare Tunnel for the app
   --named-tunnel        Use CLOUDFLARE_TUNNEL_TOKEN for a named Cloudflare Tunnel
   --tunnel-url URL      Local app URL to expose with Cloudflare Tunnel
@@ -77,6 +79,10 @@ create_env_file() {
 }
 
 install_docker() {
+  if command -v docker >/dev/null 2>&1; then
+    log "Docker is already installed. Skipping installation."
+    return 0
+  fi
   load_os_release
   need_cmd curl
   need_cmd sudo
@@ -112,6 +118,10 @@ install_docker() {
 }
 
 install_cloudflared() {
+  if command -v cloudflared >/dev/null 2>&1; then
+    log "cloudflared is already installed. Skipping installation."
+    return 0
+  fi
   load_os_release
   need_cmd curl
   need_cmd sudo
@@ -134,6 +144,10 @@ install_cloudflared() {
 }
 
 install_local_mongo() {
+  if command -v mongod >/dev/null 2>&1; then
+    log "mongodb-org (mongod) is already installed. Skipping installation."
+    return 0
+  fi
   load_os_release
   need_cmd curl
   need_cmd gpg
@@ -263,6 +277,7 @@ main() {
       --install-cloudflared) INSTALL_CLOUDFLARED=true ;;
       --install-mongo-local) INSTALL_LOCAL_MONGO=true ;;
       --start-docker) START_DOCKER_STACK=true ;;
+      --start-flask) START_FLASK=true ;;
       --start-tunnel) START_TUNNEL=true ;;
       --named-tunnel) START_TUNNEL=true; USE_NAMED_TUNNEL=true ;;
       --tunnel-url)
@@ -281,14 +296,29 @@ main() {
     INSTALL_DOCKER=true
     INSTALL_CLOUDFLARED=true
     START_DOCKER_STACK=true
+    START_TUNNEL=true
   fi
 
   $CREATE_ENV && create_env_file
   $INSTALL_DOCKER && install_docker
   $INSTALL_CLOUDFLARED && install_cloudflared
   $INSTALL_LOCAL_MONGO && install_local_mongo
-  $START_DOCKER_STACK && start_docker_stack
-  $START_TUNNEL && start_cloudflare_tunnel
+
+  if [[ "$START_FLASK" == true && "$START_TUNNEL" == true ]]; then
+    log "Starting Flask and Cloudflare Tunnel simultaneously..."
+    (cd "$PROJECT_ROOT" && python run.py) &
+    FLASK_PID=$!
+    
+    # Wait briefly to let Flask start up before tunnel hooks it
+    sleep 2
+    
+    start_cloudflare_tunnel
+    kill $FLASK_PID 2>/dev/null || true
+  else
+    $START_DOCKER_STACK && start_docker_stack
+    $START_FLASK && (cd "$PROJECT_ROOT" && python run.py)
+    $START_TUNNEL && start_cloudflare_tunnel
+  fi
 
   log "Setup complete."
 }
