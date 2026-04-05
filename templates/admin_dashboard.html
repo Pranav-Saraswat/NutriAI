@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - NutriAI{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 2rem auto; padding: 2rem; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px solid var(--border);">
+    <h1 style="color: var(--text-primary); margin-bottom: 2rem;">Admin Dashboard</h1>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="padding: 1.5rem; background: rgba(16, 163, 127, 0.1); border: 1px solid rgba(16, 163, 127, 0.3); border-radius: var(--radius); text-align: center;">
+            <h3 style="color: var(--text-muted); margin: 0 0 0.5rem 0; font-size: 0.9rem;">Total Users</h3>
+            <p style="color: var(--text-primary); font-size: 2rem; font-weight: 700; margin: 0;">{{ stats.total_users }}</p>
+        </div>
+        <div style="padding: 1.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: var(--radius); text-align: center;">
+            <h3 style="color: var(--text-muted); margin: 0 0 0.5rem 0; font-size: 0.9rem;">Total Messages</h3>
+            <p style="color: var(--text-primary); font-size: 2rem; font-weight: 700; margin: 0;">{{ stats.total_messages }}</p>
+        </div>
+        <div style="padding: 1.5rem; background: {% if stats.db_available %}rgba(16, 163, 127, 0.1){% else %}rgba(239, 68, 68, 0.1){% endif %}; border: 1px solid {% if stats.db_available %}rgba(16, 163, 127, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %}; border-radius: var(--radius); text-align: center;">
+            <h3 style="color: var(--text-muted); margin: 0 0 0.5rem 0; font-size: 0.9rem;">Database Setup</h3>
+            <p style="color: {% if stats.db_available %}var(--text-primary){% else %}#ef4444{% endif %}; font-size: 1.5rem; font-weight: 700; margin: 0;">
+                {% if stats.db_available %}Online{% else %}Offline{% endif %}
+            </p>
+        </div>
+    </div>
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-primary); text-decoration: none;">Return Home</a>
+</div>
+{% endblock %}

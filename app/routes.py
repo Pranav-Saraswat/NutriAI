@@ -1,6 +1,8 @@
-from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app
-from .models import db, User, ChatMessage
+from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for, flash, current_app, abort
+import re
+from .models import db, User, ChatMessage, WeightLog
 from .services import llm_service
+from .extensions import limiter
 from datetime import datetime
 from functools import wraps
 from bson.errors import InvalidDocument
@@ -85,8 +87,20 @@ def login_required(f):
     return decorated_function
 
 
+def admin_required(f):
+    """Decorator to require admin role."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = get_current_user()
+        if not user or getattr(user, 'role', 'user') != 'admin':
+            abort(403, description="Admin access required.")
+        return f(*args, **kwargs)
+    return login_required(decorated_function)
+
+
 # ===== Auth Routes =====
 @main_bp.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def register():
     """User registration."""
     if 'user_id' in session:
@@ -104,10 +118,11 @@ def register():
         errors = []
         if not name or len(name) < 2:
             errors.append('Name must be at least 2 characters.')
-        if not email or '@' not in email:
+        email_regex = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
+        if not email or not email_regex.match(email):
             errors.append('Please enter a valid email address.')
-        if not password or len(password) < 6:
-            errors.append('Password must be at least 6 characters.')
+        if not password or len(password) < 8:
+            errors.append('Password must be at least 8 characters.')
         if password != confirm_password:
             errors.append('Passwords do not match.')
         
@@ -135,6 +150,7 @@ def register():
 
 
 @main_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def login():
     """User login."""
     if 'user_id' in session:
@@ -249,6 +265,7 @@ def chat_interface():
 
 @main_bp.route('/api/chat', methods=['POST'])
 @login_required
+@limiter.limit("20 per minute")
 def api_chat():
     """API endpoint for chat messages."""
     try:
@@ -402,6 +419,48 @@ def clear_chat_history():
             'success': False,
             'error': 'Failed to clear chat history. Please try again.'
         }), 500
+
+
+@main_bp.route('/api/weight-log', methods=['GET', 'POST'])
+@login_required
+def weight_api():
+    """Get or add weight logs."""
+    user = get_current_user()
+    if request.method == 'POST':
+        data = request.get_json() or {}
+        weight = data.get('weight_kg')
+        if not weight:
+            try:
+                weight = float(request.form.get('weight_kg', 0))
+            except ValueError:
+                weight = None
+        if not weight or weight <= 0:
+            return jsonify({'success': False, 'error': 'Invalid weight.'}), 400
+        
+        # Log the new weight
+        WeightLog.create(user.id, weight)
+        
+        # Update user's current weight
+        user.weight_kg = weight
+        user.save()
+        
+        return jsonify({'success': True, 'message': 'Weight logged.'})
+
+    # GET method
+    logs = [log.to_dict() for log in WeightLog.list_for_user(user.id, limit=30)]
+    return jsonify({'success': True, 'data': logs})
+
+
+@main_bp.route('/admin/dashboard')
+@admin_required
+def admin_dashboard():
+    """Admin dashboard."""
+    stats = {
+        'total_users': db.database["users"].count_documents({}),
+        'total_messages': db.database["chat_messages"].count_documents({}),
+        'db_available': db.available
+    }
+    return render_template('admin_dashboard.html', stats=stats)
 
 
 def validate_profile_form(form, require_name=False):

@@ -2,7 +2,9 @@ from pathlib import Path
 import secrets
 from flask import Flask, abort, redirect, request, session
 from flask_cors import CORS
+from flask_talisman import Talisman
 from .config import config
+from .extensions import socketio, limiter
 
 
 def create_app(config_name='development'):
@@ -27,9 +29,20 @@ def create_app(config_name='development'):
     from .models import db
     db.init_app(app)
 
+    # Initialize extensions
+    socketio.init_app(app)
+    limiter.init_app(app)
+    
+    # Configure Talisman for basic security headers (relaxed for local dev)
+    Talisman(app, content_security_policy=None, force_https=False)
+
+
     # Register routes
     from .routes import main_bp
     app.register_blueprint(main_bp)
+
+    # Register events
+    from . import events
 
     @app.context_processor
     def inject_csrf_token():
@@ -73,12 +86,4 @@ def create_app(config_name='development'):
         target_url = f"{tunnel_url.rstrip('/')}{request.path}{query}"
         return redirect(target_url, code=302)
 
-    @app.after_request
-    def add_security_headers(response):
-        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
-        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
-        response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
-        response.headers.setdefault('Cache-Control', 'no-store')
-        return response
-    
     return app

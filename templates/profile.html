@@ -71,6 +71,17 @@
                 {% endif %}
             </div>
             
+            <div class="weight-log-card" style="margin-bottom: 1.5rem; background: var(--bg-card); padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border);">
+                <div class="form-section-header" style="margin-top: 0">
+                    <span class="section-icon">⚖️</span>
+                    <h3>Weight Tracker</h3>
+                </div>
+                <form id="weightLogForm" style="display: flex; gap: 1rem;">
+                    <input type="number" id="weight_kg" placeholder="Current weight (kg)" step="0.1" required style="flex: 1; padding: 0.875rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
+                    <button type="submit" class="btn btn-primary" style="padding: 0.875rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: var(--radius); cursor: pointer;">Log Weight</button>
+                </form>
+            </div>
+            
             <!-- Profile Edit Form -->
             <div class="profile-form-card">
                 <form method="POST" class="profile-form" id="profileForm">
@@ -507,7 +518,32 @@
 </style>
 
 <script>
+document.getElementById('weightLogForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = this.querySelector('button');
+    btn.disabled = true;
+    const weight = document.getElementById('weight_kg').value;
+    try {
+        const response = await fetch('/api/weight-log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+            body: JSON.stringify({ weight_kg: parseFloat(weight) })
+        });
+        const res = await response.json();
+        if (res.success) {
+            alert('Weight logged successfully!');
+            location.reload();
+        } else {
+            alert(res.error || 'Failed to log weight');
+        }
+    } catch (err) {
+        alert('Connection error');
+    }
+    btn.disabled = false;
+});
+
 // Show loading state on submit
+
 document.getElementById('profileForm').addEventListener('submit', function(e) {
     const submitBtn = this.querySelector('button[type="submit"]');
     submitBtn.disabled = true;

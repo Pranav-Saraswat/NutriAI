@@ -42,6 +42,7 @@ class MongoDB:
             raise RuntimeError("MongoDB has not been initialized.")
         self.database["users"].create_index([("email", ASCENDING)], unique=True)
         self.database["chat_messages"].create_index([("user_id", ASCENDING), ("created_at", ASCENDING)])
+        self.database["weight_logs"].create_index([("user_id", ASCENDING), ("created_at", DESCENDING)])
 
     def ensure_connection(self):
         """Refresh connection status and indexes if MongoDB becomes available later."""
@@ -76,6 +77,13 @@ class MongoDB:
             raise RuntimeError("MongoDB has not been initialized.")
         self.ensure_connection()
         return self.database["chat_messages"]
+
+    @property
+    def weight_logs(self):
+        if self.database is None:
+            raise RuntimeError("MongoDB has not been initialized.")
+        self.ensure_connection()
+        return self.database["weight_logs"]
 
 
 db = MongoDB()
@@ -146,6 +154,7 @@ class User:
             "dietary_preferences": None,
             "allergies": None,
             "medical_conditions": None,
+            "role": "user",
             "is_active": True,
             "created_at": now,
             "updated_at": now,
@@ -244,6 +253,7 @@ class User:
         return {
             "id": self.id,
             "email": self.email,
+            "role": getattr(self, "role", "user"),
             "name": self.name,
             "age": self.age,
             "gender": self.gender,
@@ -303,3 +313,42 @@ class ChatMessage:
             "content": self.content,
             "created_at": self.created_at.isoformat(),
         }
+
+
+class WeightLog:
+    """Store weight tracking history."""
+
+    def __init__(self, document):
+        self._doc = _serialize_id(document)
+
+    def __getattr__(self, item):
+        if item == "id":
+            return self._doc.get("_id")
+        return self._doc.get(item)
+
+    @classmethod
+    def create(cls, user_id, weight_kg):
+        now = datetime.utcnow()
+        document = {
+            "user_id": user_id,
+            "weight_kg": weight_kg,
+            "created_at": now,
+        }
+        result = db.weight_logs.insert_one(document)
+        document["_id"] = result.inserted_id
+        return cls(document)
+
+    @classmethod
+    def list_for_user(cls, user_id, limit=None):
+        cursor = db.weight_logs.find({"user_id": user_id}).sort("created_at", DESCENDING)
+        if limit:
+            cursor = cursor.limit(limit)
+        return [cls(document) for document in cursor]
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "weight_kg": self.weight_kg,
+            "created_at": self.created_at.isoformat(),
+        }
+

@@ -1,353 +1,77 @@
-# NutriAI
+<div align="center">
+  <h1>🥗 NutriAI</h1>
+  <p><strong>Your Personal AI Nutrition & Fitness Assistant</strong></p>
 
-NutriAI is a Flask-based AI nutrition assistant with:
+  <!-- Badges -->
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" />
+  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" />
+  <img src="https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white" />
+</div>
 
-- User registration and login
-- Personalized health profile setup
-- AI chat for nutrition and fitness guidance
-- MongoDB-backed user and chat storage
-- Daily calorie, protein, water, and step targets
-- Docker support for local full-stack setup
-- Optional Cloudflare Tunnel support for public sharing
+<br />
 
-## Tech Stack
+> **NutriAI** is an intelligent, full-stack, Flask-based application that acts as your personalized nutrition coach. With real-time AI capabilities, robust security layers, and an integrated Metahuman interface, it offers holistic health tracking, chat streaming, and personalized dieting recommendations!
 
-- Python
-- Flask
-- MongoDB
-- Groq API
-- Docker Compose
+---
 
-## Features
+## ✨ Key Features
 
-- Secure authentication with hashed passwords
-- CSRF protection for forms and AJAX requests
-- Session-based login with optional "remember me"
-- User profile management
-- Chat history storage and clearing
-- Health check endpoint for app and database status
-- Personalized daily target calculations based on user profile
+| Feature | Description |
+| ------- | ----------- |
+| ⚡ **Live AI Chat** | Ask questions and get real-time token streaming from Groq via WebSockets. |
+| 🤖 **Metahuman Ready** | UI boilerplate prepared for live 3D Avatar streaming (like HeyGen or D-ID). |
+| 🛡️ **Tight Security** | CSRF protection, Flask-Limiter for throttling, and Talisman HTTP headers. |
+| ⚖️ **Weight Tracking**| Log your body weight and visualize your journey toward your goal. |
+| 📊 **Admin Dashboard**| Role-based access control with an internal overview of data and connections. |
 
-## Project Structure
+## 🚀 Quick Start (Docker Setup)
 
-```text
-NutriAI/
-├── app/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── models.py
-│   ├── routes.py
-│   └── services.py
-├── static/
-├── templates/
-├── .env.example
-├── .dockerignore
-├── .gitignore
-├── docker-compose.yml
-├── Dockerfile
-├── scripts/
-│   └── setup-dev.sh
-├── requirements.txt
-├── run.py
-└── README.md
-```
+The easiest way to get NutriAI running is through Docker Compose.
 
-## Local Setup
-
-### 1. Create a virtual environment
-
+### 1. Configure the Environment
+Clone the repository and copy the environment template:
 ```bash
-python -m venv .venv
+cp .env.example .env
 ```
+Ensure you add your `GROQ_API_KEY` to the `.env` file!
 
-Windows PowerShell:
-
-```powershell
-.venv\Scripts\Activate.ps1
-```
-
-macOS/Linux:
-
-```bash
-source .venv/bin/activate
-```
-
-### 2. Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Create your environment file
-
-Copy [`.env.example`](/c:/Users/Prana/Downloads/NutriAI/.env.example) to `.env` and update the values.
-
-Required values:
-
-- `SECRET_KEY`
-- `MONGO_URI`
-- `MONGO_DB_NAME`
-- `GROQ_API_KEY`
-
-### 4. Start MongoDB
-
-If you already have MongoDB installed locally, make sure it is running on the URI from `.env`.
-
-Default local URI:
-
-```text
-mongodb://localhost:27017/
-```
-
-### 5. Run the app
-
-```bash
-python run.py
-```
-
-Open:
-
-```text
-http://127.0.0.1:5000
-```
-
-## Docker Setup
-
-This project includes a Flask app container and a MongoDB container.
-
-### 1. Prepare environment variables
-
-Create `.env` from [`.env.example`](/c:/Users/Prana/Downloads/NutriAI/.env.example).
-
-For Docker Compose, the Mongo host is overridden automatically to:
-
-```text
-mongodb://mongo:27017/
-```
-
-### 2. Start the stack
-
+### 2. Run the Stack
+Start both the Flask application and MongoDB containers using Docker Compose.
 ```bash
 docker compose up --build
 ```
-
-### 3. Stop the stack
-
-```bash
-docker compose down
-```
-
-To remove the MongoDB volume too:
-
-```bash
-docker compose down -v
-```
-
-## One-Command Linux Setup
-
-For Ubuntu/Debian, the repo now includes a bootstrap script:
-
-```bash
-chmod +x scripts/*.sh
-./scripts/setup-dev.sh --all
-```
-
-What `--all` does:
-
-- creates `.env` from `.env.example` if missing
-- installs Docker Engine and Docker Compose plugin
-- installs `cloudflared`
-- starts the NutriAI Docker stack
-
-Useful variants:
-
-```bash
-./scripts/setup-dev.sh --create-env --install-docker --install-cloudflared
-./scripts/setup-dev.sh --install-mongo-local
-./scripts/setup-dev.sh --start-docker
-./scripts/setup-dev.sh --start-tunnel
-```
-
-Notes:
-
-- The setup script currently targets Ubuntu/Debian on Linux.
-- `--install-mongo-local` installs MongoDB directly on the host instead of using Docker.
-- On Debian 12, the script intentionally recommends Docker MongoDB instead of the MongoDB 7.0 apt path.
-
-## Local MongoDB Installation
-
-If you want MongoDB on the host instead of Docker:
-
-```bash
-./scripts/setup-dev.sh --install-mongo-local
-```
-
-After installation, the script starts and enables `mongod` automatically.
-
-Default local Mongo URI:
-
-```text
-mongodb://localhost:27017/
-```
-
-If you use Docker Compose instead, the app connects to:
-
-```text
-mongodb://mongo:27017/
-```
-
-## Cloudflare Tunnel
-
-You can expose the local app publicly using Cloudflare Tunnel.
-
-### Quick tunnel for testing
-
-```bash
-./scripts/setup-dev.sh --start-tunnel
-```
-
-This exposes:
-
-```text
-http://localhost:5000
-```
-
-When `TUNNEL_AUTO_REDIRECT=True` and the tunnel script is running, opening:
-
-```text
-http://127.0.0.1:5000
-```
-
-will automatically redirect to the live Cloudflare Tunnel URL.
-
-You can also point it to a custom local URL:
-
-```bash
-./scripts/setup-dev.sh --start-tunnel --tunnel-url http://localhost:5000
-```
-
-### Named tunnel with token
-
-Add this to `.env`:
-
-```text
-CLOUDFLARE_TUNNEL_TOKEN=your_token_here
-TUNNEL_PUBLIC_URL=https://your-public-hostname.example.com
-```
-
-Then run:
-
-```bash
-./scripts/setup-dev.sh --start-tunnel --named-tunnel
-```
-
-This is the better path for a stable hostname.
-
-## Automatic Redirect To Tunnel
-
-If you want local Flask URLs to bounce to the public Cloudflare URL automatically, keep this enabled in `.env`:
-
-```text
-TUNNEL_AUTO_REDIRECT=True
-```
-
-How it works:
-
-- `scripts/setup-dev.sh --start-tunnel` writes the active public URL to `.cloudflare_url`
-- Flask reads that file on local requests
-- requests to `localhost` and `127.0.0.1` redirect to the tunnel URL
-
-Notes:
-
-- only local browser-style `GET` and `HEAD` requests are redirected
-- `/api/*` routes are not redirected
-- when the tunnel process stops, the URL file is removed automatically
-- for named tunnels, set `TUNNEL_PUBLIC_URL` so Flask knows the stable public URL
-
-## Environment Variables
-
-Common variables used by the app:
-
-| Variable | Description | Example |
-| --- | --- | --- |
-| `APP_ENV` | App mode | `development` or `production` |
-| `SECRET_KEY` | Flask session secret | `change-me` |
-| `MONGO_URI` | MongoDB connection string | `mongodb://localhost:27017/` |
-| `MONGO_DB_NAME` | Mongo database name | `nutriai_db` |
-| `MONGO_TIMEOUT_MS` | Mongo timeout in ms | `3000` |
-| `GROQ_API_KEY` | Groq API key | `your-key` |
-| `GROQ_MODEL` | Groq model name | `llama-3.1-8b-instant` |
-| `MAX_CONTENT_LENGTH` | Max request payload size | `16777216` |
-| `SESSION_COOKIE_SECURE` | Secure cookie flag | `False` locally, `True` behind HTTPS |
-| `SESSION_LIFETIME_DAYS` | Remember-me session duration | `30` |
-| `CORS_ORIGINS` | Allowed frontend origins | `http://127.0.0.1:5000,http://localhost:5000` |
-| `CLOUDFLARE_TUNNEL_TOKEN` | Token for a named Cloudflare Tunnel | `token-from-cloudflare` |
-| `APP_URL` | Local URL to expose with quick tunnel | `http://localhost:5000` |
-| `TUNNEL_PUBLIC_URL` | Public hostname for named tunnel redirect | `https://app.example.com` |
-| `TUNNEL_AUTO_REDIRECT` | Redirect localhost requests to tunnel URL | `True` |
-| `TUNNEL_URL_FILE` | File used to store active tunnel URL | `.cloudflare_url` |
-
-## API Endpoints
-
-| Endpoint | Method | Purpose |
-| --- | --- | --- |
-| `/api/health` | `GET` | App and database health status |
-| `/api/chat` | `POST` | Send a chat message |
-| `/api/user` | `GET` | Get current user profile data |
-| `/api/chat-history` | `DELETE` | Clear chat history |
-
-## Security Notes
-
-- Passwords are stored using Werkzeug password hashing.
-- CSRF protection is enabled for state-changing requests.
-- Basic secure headers are added to responses.
-- `.env` is ignored by git and Docker build context.
-
-## Important Note About Secrets
-
-If you previously stored a real API key in `.env`, rotate it and replace it with a new one. Do not commit real secrets into source control.
-
-## Troubleshooting
-
-### MongoDB connection refused
-
-If you see errors like `localhost:27017 connection refused`, MongoDB is not running or `MONGO_URI` is incorrect.
-
-### Groq API not working
-
-Check:
-
-- `GROQ_API_KEY` is set
-- Internet access is available
-- The configured `GROQ_MODEL` is valid
-
-### Docker command not found
-
-Install Docker Desktop or Docker Engine, then retry:
-
-```bash
-docker compose up --build
-```
-
-### cloudflared command not found
-
-Install it with the setup script:
-
-```bash
-./scripts/setup-dev.sh --install-cloudflared
-```
-
-Or install it manually using Cloudflare's instructions for your OS.
-
-## Development Notes
-
-- `run.py` starts the Flask development server locally.
-- Docker uses `gunicorn` for a more production-like app server.
-- The health endpoint is useful for readiness checks and debugging.
-
-## Future Ideas
-
-- Add meal logging and progress tracking
-- Add admin analytics/dashboard
-- Add profile photo and richer onboarding
-- Add tests for auth, chat, and profile flows
+> **Tip:** NutriAI will now be running on `http://localhost:5000`.
+
+## ⚙️ Environment Variables
+
+NutriAI relies on several configuration keys. Update your `.env` appropriately:
+
+| Variable | Example Value | Description |
+| -------- | ------------- | ----------- |
+| `SECRET_KEY` | `super-secret` | Flask session cookie secret. |
+| `MONGO_URI` | `mongodb://mongo:27017/` | Connection URI for the database. |
+| `GROQ_API_KEY` | `gsk_XXX` | Required API key for the AI Chat interface. |
+| `GROQ_MODEL` | `llama-3.1-8b-instant` | The model size specified for Groq predictions. |
+
+---
+
+## 🛠 Manual Installation
+
+If you prefer to run it manually without Docker:
+1. Copy `.env.example` to `.env` and set the required variables.
+2. Install MongoDB on your system.
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Start the Application:
+   ```bash
+   python run.py
+   ```
+
+<br />
+
+<div align="center">
+  <sub>Built with ❤️ by the NutriAI Community</sub>
+</div>

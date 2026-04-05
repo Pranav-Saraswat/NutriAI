@@ -119,13 +119,26 @@
 
     <!-- Main Chat Area -->
     <main class="chat-main">
-        <div class="chat-header">
-            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
-            <div class="chat-header-info">
-                <h1>🥗 Your AI Nutrition Coach</h1>
-                <p>Ask me anything about health, fitness, and nutrition!</p>
+        <div class="chat-header" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+                <div class="chat-header-info">
+                    <h1>🥗 Your AI Nutrition Coach</h1>
+                    <p>Ask me anything about health, fitness, and nutrition!</p>
+                </div>
             </div>
-            <button class="clear-chat-btn" id="clearChatBtn" title="Clear Chat History">🗑️</button>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button id="toggleMetahumanBtn" class="new-chat-btn" style="background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border);">🤖 Toggle Metahuman</button>
+                <button class="clear-chat-btn" id="clearChatBtn" title="Clear Chat History">🗑️</button>
+            </div>
+        </div>
+        
+        <!-- Metahuman Display (Hidden by default) -->
+        <div class="metahuman-container" id="metahumanContainer" style="display: none; height: 300px; background: #111; position: relative;">
+            <video id="metahumanVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+            <div style="position: absolute; bottom: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; font-size: 0.8rem;">
+                Metahuman API Component (Requires HeyGen/D-ID Config)
+            </div>
         </div>
         
         <div class="chat-messages" id="chatMessages">
@@ -923,6 +936,7 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
 <script>
 // Suggestion click handler
 function useSuggestion(text) {
@@ -1015,8 +1029,69 @@ document.addEventListener('DOMContentLoaded', function() {
         userInput.disabled = loading;
     }
     
+    const socket = io();
+    let currentAssistantMessageDiv = null;
+    let currentAssistantContent = null;
+
+    socket.on('connect', () => {
+        console.log('Connected to chat server');
+    });
+
+    socket.on('chat_status', (data) => {
+        if (data.status === 'typing') {
+            showTyping(true);
+            currentAssistantMessageDiv = null;
+        } else if (data.status === 'done') {
+            showTyping(false);
+            setLoading(false);
+            userInput.focus();
+            currentAssistantMessageDiv = null;
+        }
+    });
+
+    socket.on('chat_error', (data) => {
+        showTyping(false);
+        setLoading(false);
+        addMessage('⚠️ Error: ' + (data.error || 'Failed to get response'), 'assistant');
+    });
+
+    socket.on('chat_token', (data) => {
+        showTyping(false);
+        if (!currentAssistantMessageDiv) {
+            // Remove welcome screen if exists
+            const welcomeScreen = document.querySelector('.welcome-screen');
+            if (welcomeScreen) welcomeScreen.remove();
+
+            currentAssistantMessageDiv = document.createElement('div');
+            currentAssistantMessageDiv.className = 'message assistant';
+            
+            currentAssistantContent = document.createElement('div');
+            currentAssistantContent.className = 'message-content markdown-body';
+            
+            currentAssistantMessageDiv.innerHTML = `
+                <div class="message-content-wrapper">
+                    <div class="message-avatar">🥗</div>
+                </div>
+            `;
+            currentAssistantMessageDiv.querySelector('.message-content-wrapper').appendChild(currentAssistantContent);
+            
+            chatMessages.insertBefore(currentAssistantMessageDiv, typingIndicator);
+        }
+        
+        let existingText = currentAssistantContent.getAttribute('data-raw-content') || '';
+        existingText += data.token;
+        currentAssistantContent.setAttribute('data-raw-content', existingText);
+        
+        if (typeof marked !== 'undefined') {
+            currentAssistantContent.innerHTML = marked.parse(existingText);
+        } else {
+            currentAssistantContent.innerText = existingText;
+        }
+        scrollToBottom();
+    });
+
     // Handle form submit
-    chatForm.addEventListener('submit', async function(e) {
+    chatForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
         const message = userInput.value.trim();
@@ -1028,40 +1103,23 @@ document.addEventListener('DOMContentLoaded', function() {
         setLoading(true);
         showTyping(true);
         
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({ message: message })
-            });
-
-            const contentType = response.headers.get('content-type') || '';
-            const data = contentType.includes('application/json')
-                ? await response.json()
-                : {
-                    success: false,
-                    error: await response.text() || 'Unexpected server response'
-                };
-            
-            showTyping(false);
-            
-            if (response.ok && data.success) {
-                addMessage(data.response, 'assistant');
-            } else {
-                addMessage('⚠️ Error: ' + (data.error || 'Failed to get response'), 'assistant');
-            }
-        } catch (error) {
-            showTyping(false);
-            addMessage('⚠️ Error: Connection failed. Please try again.', 'assistant');
-            console.error('Chat error:', error);
-        } finally {
-            setLoading(false);
-            userInput.focus();
-        }
+        socket.emit('chat_message', { message: message });
     });
+
+    // Metahuman Toggle
+    const toggleMetahumanBtn = document.getElementById('toggleMetahumanBtn');
+    const metahumanContainer = document.getElementById('metahumanContainer');
+    if (toggleMetahumanBtn) {
+        toggleMetahumanBtn.addEventListener('click', () => {
+            if (metahumanContainer.style.display === 'none') {
+                metahumanContainer.style.display = 'block';
+                toggleMetahumanBtn.innerText = '🤖 Hide Metahuman';
+            } else {
+                metahumanContainer.style.display = 'none';
+                toggleMetahumanBtn.innerText = '🤖 Toggle Metahuman';
+            }
+        });
+    }
     
     // Clear chat history
     if (clearChatBtn) {

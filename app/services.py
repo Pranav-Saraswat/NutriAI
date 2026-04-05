@@ -159,6 +159,45 @@ USER PROFILE DATA:
         except Exception as e:
             current_app.logger.exception("Groq chat request failed")
             return {'success': False, 'response': None, 'error': str(e)}
+
+    def chat_stream(self, user_message, user_profile_summary, chat_history=None):
+        try:
+            client = self._get_client()
+            if not client:
+                error_message = 'Groq SDK is not installed.' if Groq is None else 'Groq client not initialized.'
+                yield {'success': False, 'error': error_message, 'is_final': True}
+                return
+            
+            messages = [{"role": "system", "content": self._get_system_prompt(user_profile_summary)}]
+            if chat_history:
+                for msg in chat_history[-10:]:
+                    messages.append({"role": msg['role'], "content": msg['content']})
+            else:
+                messages.append({"role": "user", "content": user_message})
+            
+            completion = client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=600,
+                top_p=1,
+                stream=True,
+                stop=None,
+            )
+            
+            full_response = ""
+            for chunk in completion:
+                content = chunk.choices[0].delta.content
+                if content:
+                    full_response += content
+                    yield {'success': True, 'chunk': content, 'is_final': False}
+            
+            yield {'success': True, 'response': full_response, 'is_final': True}
+            
+        except Exception as e:
+            current_app.logger.exception("Groq chat stream failed")
+            yield {'success': False, 'error': str(e), 'is_final': True}
+
     
     def test_connection(self):
         client = self._get_client()
