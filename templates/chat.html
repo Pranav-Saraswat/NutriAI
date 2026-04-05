@@ -134,10 +134,11 @@
         </div>
         
         <!-- Metahuman Display (Hidden by default) -->
-        <div class="metahuman-container" id="metahumanContainer" style="display: none; height: 300px; background: #111; position: relative;">
-            <video id="metahumanVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
-            <div style="position: absolute; bottom: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 5px; font-size: 0.8rem;">
-                Metahuman API Component (Requires HeyGen/D-ID Config)
+        <div class="metahuman-container" id="metahumanContainer" style="display: none; height: 350px; background: #222; position: relative; border-bottom: 1px solid var(--border);">
+            <div id="avatarCanvasContainer" style="width: 100%; height: 100%;"></div>
+            <div id="avatarLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 600;">Loading 3D Avatar...</div>
+            <div style="position: absolute; bottom: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 5px 8px; border-radius: 5px; font-size: 0.75rem;">
+                Free Metahuman Avatar (Ready Player Me)
             </div>
         </div>
         
@@ -216,6 +217,9 @@
                         autocomplete="off"
                         required
                     >
+                    <button type="button" id="micBtn" class="mic-btn" title="Click to speak">
+                        <span class="btn-icon">🎤</span>
+                    </button>
                     <button type="submit" id="sendBtn">
                         <span class="btn-text">Send</span>
                         <span class="btn-icon">🚀</span>
@@ -684,6 +688,32 @@
     gap: 0.5rem;
 }
 
+.chat-form .mic-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 0.75rem;
+}
+
+.chat-form .mic-btn:hover {
+    background: rgba(16, 163, 127, 0.1);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.chat-form .mic-btn.recording {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: #ef4444;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
 .chat-form button:hover {
     background: var(--accent-hover);
 }
@@ -937,7 +967,138 @@
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script>
+// Metahuman Avatar Class definition
+class MetahumanAvatar {
+    constructor(containerId) {
+        this.container = document.getElementById(containerId);
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(45, this.container.clientWidth / this.container.clientHeight, 0.1, 100);
+        this.camera.position.set(0, 1.5, 3);
+        
+        this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.container.appendChild(this.renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        this.scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(0, 5, 5);
+        this.scene.add(dirLight);
+
+        this.headMesh = null;
+        this.clock = new THREE.Clock();
+        this.isSpeaking = false;
+        
+        this.loadModel();
+        
+        const resizeObserver = new ResizeObserver(() => {
+            if (!this.container || this.container.clientWidth === 0) return;
+            this.camera.aspect = this.container.clientWidth / this.container.clientHeight;
+            this.camera.updateProjectionMatrix();
+            this.renderer.setSize(this.container.clientWidth, this.container.clientHeight);
+        });
+        resizeObserver.observe(this.container);
+
+        this.animate();
+    }
+
+    loadModel() {
+        const loader = new THREE.GLTFLoader();
+        // A generic public Ready Player Me avatar
+        const avatarUrl = 'https://models.readyplayer.me/64bffa15f6c8d76d63428945.glb';
+        
+        loader.load(avatarUrl, (gltf) => {
+            const model = gltf.scene;
+            model.position.set(0, -1.6, 0); // Position to frame head and shoulders
+            this.scene.add(model);
+            
+            const loadingIndicator = document.getElementById('avatarLoading');
+            if(loadingIndicator) loadingIndicator.style.display = 'none';
+
+            // Find the head mesh to control morph targets (mouthOpen/jawOpen)
+            model.traverse((node) => {
+                if (node.isMesh && node.morphTargetDictionary) {
+                    if (node.morphTargetDictionary.jawOpen !== undefined || node.morphTargetDictionary.mouthOpen !== undefined) {
+                        this.headMesh = node;
+                    }
+                }
+            });
+        }, undefined, (error) => {
+            console.error('Error loading avatar:', error);
+            const loadingIndicator = document.getElementById('avatarLoading');
+            if(loadingIndicator) loadingIndicator.innerText = 'Failed to load avatar';
+        });
+    }
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        const time = this.clock.getElapsedTime();
+        
+        if (this.headMesh && this.headMesh.morphTargetInfluences) {
+            const dict = this.headMesh.morphTargetDictionary;
+            const targetIndex = dict.jawOpen !== undefined ? dict.jawOpen : dict.mouthOpen;
+            const smileIndex = dict.mouthSmile !== undefined ? dict.mouthSmile : undefined;
+            
+            if (smileIndex !== undefined) {
+                // Subtle random idle smile
+                this.headMesh.morphTargetInfluences[smileIndex] = 0.2 + Math.sin(time) * 0.1;
+            }
+
+            if (targetIndex !== undefined) {
+                if (this.isSpeaking) {
+                    // Simulate jaw movement based on sine wave when speaking
+                    const fakeAudioVolume = Math.abs(Math.sin(time * 15)) * 0.8 + 0.2;
+                    this.headMesh.morphTargetInfluences[targetIndex] = THREE.MathUtils.lerp(
+                        this.headMesh.morphTargetInfluences[targetIndex],
+                        fakeAudioVolume,
+                        0.4
+                    );
+                } else {
+                    // Close mouth smoothly naturally
+                    this.headMesh.morphTargetInfluences[targetIndex] = THREE.MathUtils.lerp(
+                        this.headMesh.morphTargetInfluences[targetIndex],
+                        0.0,
+                        0.2
+                    );
+                }
+            }
+        }
+        
+        this.renderer.render(this.scene, this.camera);
+    }
+
+    speak(text) {
+        if (!('speechSynthesis' in window)) return;
+        
+        window.speechSynthesis.cancel();
+        
+        // Clean markdown characters from speech text
+        const cleanText = text.replace(/[*_#`~>]/g, '').trim();
+        if (!cleanText) return;
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Find a preferred voice
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Google US English'));
+        if (preferredVoice) utterance.voice = preferredVoice;
+        
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        utterance.onstart = () => { this.isSpeaking = true; };
+        utterance.onend = () => { this.isSpeaking = false; };
+        utterance.onerror = () => { this.isSpeaking = false; };
+
+        // Delay briefly to avoid clipping initialization
+        setTimeout(() => window.speechSynthesis.speak(utterance), 50);
+    }
+}
+
 // Suggestion click handler
 function useSuggestion(text) {
     const input = document.getElementById('userInput');
@@ -1029,12 +1190,15 @@ document.addEventListener('DOMContentLoaded', function() {
         userInput.disabled = loading;
     }
     
+    let avatarInstance = null;
     const socket = io();
     let currentAssistantMessageDiv = null;
     let currentAssistantContent = null;
 
     socket.on('connect', () => {
         console.log('Connected to chat server');
+        // Pre-load voices on interaction / connect
+        if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
     });
 
     socket.on('chat_status', (data) => {
@@ -1045,6 +1209,12 @@ document.addEventListener('DOMContentLoaded', function() {
             showTyping(false);
             setLoading(false);
             userInput.focus();
+            
+            // Trigger Metahuman speech
+            if (avatarInstance && document.getElementById('metahumanContainer').style.display !== 'none' && currentAssistantContent) {
+                avatarInstance.speak(currentAssistantContent.innerText);
+            }
+            
             currentAssistantMessageDiv = null;
         }
     });
@@ -1106,6 +1276,78 @@ document.addEventListener('DOMContentLoaded', function() {
         socket.emit('chat_message', { message: message });
     });
 
+    // Speech Recognition (Mic and Live Speech)
+    const micBtn = document.getElementById('micBtn');
+    if (micBtn && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
+
+        let isRecording = false;
+
+        recognition.onstart = function() {
+            isRecording = true;
+            micBtn.classList.add('recording');
+            userInput.placeholder = "Listening...";
+        };
+
+        recognition.onresult = function(event) {
+            let finalTranscript = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript;
+                }
+            }
+
+            if (finalTranscript) {
+                const currentVal = userInput.value;
+                userInput.value = currentVal ? currentVal + ' ' + finalTranscript : finalTranscript;
+            }
+        };
+
+        recognition.onerror = function(event) {
+            console.error('Speech recognition error', event.error);
+            stopRecording();
+        };
+
+        recognition.onend = function() {
+            stopRecording();
+            // Automatically submit for "live speech" feel if text exists
+            if (userInput.value.trim().length > 0 && !sendBtn.disabled) {
+                setTimeout(() => {
+                    if (userInput.value.trim().length > 0 && !sendBtn.disabled) {
+                        chatForm.dispatchEvent(new Event('submit'));
+                    }
+                }, 600);
+            }
+        };
+
+        function stopRecording() {
+            isRecording = false;
+            micBtn.classList.remove('recording');
+            userInput.placeholder = "Ask about nutrition, fitness, or health...";
+            try { recognition.stop(); } catch(e) {}
+        }
+
+        micBtn.addEventListener('click', () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                userInput.value = ''; // Clear input on new speech
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.error("Speech recognition failed to start", e);
+                    stopRecording();
+                }
+            }
+        });
+    } else if (micBtn) {
+        micBtn.style.display = 'none'; // Hide if browser doesn't support
+    }
+
     // Metahuman Toggle
     const toggleMetahumanBtn = document.getElementById('toggleMetahumanBtn');
     const metahumanContainer = document.getElementById('metahumanContainer');
@@ -1114,9 +1356,16 @@ document.addEventListener('DOMContentLoaded', function() {
             if (metahumanContainer.style.display === 'none') {
                 metahumanContainer.style.display = 'block';
                 toggleMetahumanBtn.innerText = '🤖 Hide Metahuman';
+                if (!avatarInstance) {
+                    avatarInstance = new MetahumanAvatar('avatarCanvasContainer');
+                }
             } else {
                 metahumanContainer.style.display = 'none';
                 toggleMetahumanBtn.innerText = '🤖 Toggle Metahuman';
+                if (avatarInstance) {
+                    window.speechSynthesis.cancel();
+                    avatarInstance.isSpeaking = false;
+                }
             }
         });
     }
