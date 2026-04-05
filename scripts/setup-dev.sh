@@ -330,12 +330,12 @@ start_cloudflare_tunnel() {
     fi
 
     log "Starting named Cloudflare Tunnel using token from environment."
-    exec cloudflared tunnel --no-autoupdate run --token "$CLOUDFLARE_TUNNEL_TOKEN"
+    exec cloudflared tunnel --no-autoupdate --protocol http2 run --token "$CLOUDFLARE_TUNNEL_TOKEN"
   fi
 
   log "Starting Cloudflare Quick Tunnel for $app_url"
   rm -f "$tunnel_url_file"
-  cloudflared tunnel --url "$app_url" 2>&1 | while IFS= read -r line; do
+  cloudflared tunnel --protocol http2 --url "$app_url" 2>&1 | while IFS= read -r line; do
     printf '%s\n' "$line"
     if [[ ! -f "$tunnel_url_file" && "$line" =~ https://[A-Za-z0-9.-]+trycloudflare.com ]]; then
       printf '%s\n' "${BASH_REMATCH[0]}" > "$tunnel_url_file"
