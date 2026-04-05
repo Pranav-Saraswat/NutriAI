@@ -23,6 +23,7 @@
         {% endwith %}
         
         <div class="profile-grid">
+            <div class="profile-sidebar">
             <!-- Profile Summary Card -->
             <div class="profile-summary-card">
                 <div class="summary-avatar">
@@ -80,6 +81,7 @@
                     <input type="number" id="weight_kg" placeholder="Current weight (kg)" step="0.1" required style="flex: 1; padding: 0.875rem 1rem; border-radius: var(--radius); border: 1px solid var(--border);">
                     <button type="submit" class="btn btn-primary" style="padding: 0.875rem 1.5rem; background: var(--accent); color: white; border: none; border-radius: var(--radius); cursor: pointer;">Log Weight</button>
                 </form>
+            </div>
             </div>
             
             <!-- Profile Edit Form -->
@@ -269,16 +271,21 @@
     gap: 2rem;
 }
 
-/* Profile Summary Card */
+.profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: sticky;
+    top: 100px;
+    height: fit-content;
+}
+
 .profile-summary-card {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border);
     padding: 2rem;
     text-align: center;
-    height: fit-content;
-    position: sticky;
-    top: 100px;
 }
 
 .summary-avatar {
@@ -488,7 +495,7 @@
         grid-template-columns: 1fr;
     }
     
-    .profile-summary-card {
+    .profile-sidebar {
         position: static;
     }
     
