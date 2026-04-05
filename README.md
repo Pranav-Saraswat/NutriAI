@@ -43,6 +43,32 @@ docker compose up --build
 ```
 > **Tip:** NutriAI will now be running on `http://localhost:5000`.
 
+## 🤖 Automated Setup Script
+
+NutriAI includes a powerful cross-platform bash script (`scripts/setup-dev.sh`) to simplify environment configuration, dependency installation, and application execution across **Windows, macOS, and various Linux distributions** (Ubuntu, Debian, Fedora, Arch).
+
+### Basic Usage
+```bash
+./scripts/setup-dev.sh [options]
+```
+
+### Setup Features
+- **`--create-env`**: Automatically copies `.env.example` to `.env` if missing.
+- **`--all`**: Runs the complete setup by creating `.env`, installing Docker & Cloudflared, and starting the Docker stack and tunnel.
+
+### Installation Features
+- **`--install-docker`**: Installs Docker Desktop (macOS/Windows via Winget) or Docker Engine (Linux).
+- **`--install-cloudflared`**: Installs Cloudflare's `cloudflared` utility for secure web tunnels.
+- **`--install-mongo-local`**: Installs MongoDB Community Server natively for local environments.
+
+### Execution Features
+- **`--start-docker`**: Builds and starts the application stack using Docker Compose.
+- **`--start-flask`**: Runs the Flask application directly (`python run.py`).
+- **`--start-tunnel`**: Exposes the application securely to the internet via Cloudflare Quick Tunnels.
+- **`--named-tunnel`**: Uses a secure named Cloudflare Tunnel (requires `CLOUDFLARE_TUNNEL_TOKEN` in `.env`).
+
+> **Note:** Options can be seamlessly combined! For example: `./scripts/setup-dev.sh --start-flask --start-tunnel` will test your app locally while sharing it publicly.
+
 ## ⚙️ Environment Variables
 
 NutriAI relies on several configuration keys. Update your `.env` appropriately:
