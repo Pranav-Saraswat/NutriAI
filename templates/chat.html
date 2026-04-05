@@ -138,7 +138,7 @@
             <div id="avatarCanvasContainer" style="width: 100%; height: 100%;"></div>
             <div id="avatarLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 600;">Loading 3D Avatar...</div>
             <div style="position: absolute; bottom: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 5px 8px; border-radius: 5px; font-size: 0.75rem;">
-                Free Metahuman Avatar (Ready Player Me)
+                Free 3D Avatar (Robot Expressive)
             </div>
         </div>
         
@@ -1008,21 +1008,24 @@ class MetahumanAvatar {
 
     loadModel() {
         const loader = new THREE.GLTFLoader();
-        // A generic public Ready Player Me avatar
-        const avatarUrl = 'https://models.readyplayer.me/64bffa15f6c8d76d63428945.glb';
+        // Fallback to a reliable public 3D Avatar (RobotExpressive) since RPM avatars sometimes 404 or get DNS-blocked
+        const avatarUrl = 'https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/RobotExpressive/RobotExpressive.glb';
         
         loader.load(avatarUrl, (gltf) => {
             const model = gltf.scene;
-            model.position.set(0, -1.6, 0); // Position to frame head and shoulders
+            model.position.set(0, -1.8, 0); // Position to frame head
+            model.scale.set(0.6, 0.6, 0.6);
             this.scene.add(model);
             
             const loadingIndicator = document.getElementById('avatarLoading');
             if(loadingIndicator) loadingIndicator.style.display = 'none';
 
-            // Find the head mesh to control morph targets (mouthOpen/jawOpen)
+            // Find the head mesh to control morph targets
             model.traverse((node) => {
                 if (node.isMesh && node.morphTargetDictionary) {
-                    if (node.morphTargetDictionary.jawOpen !== undefined || node.morphTargetDictionary.mouthOpen !== undefined) {
+                    const dict = node.morphTargetDictionary;
+                    // Support standard formats and RobotExpressive format
+                    if (dict.jawOpen !== undefined || dict.mouthOpen !== undefined || dict.MouthOpen !== undefined) {
                         this.headMesh = node;
                     }
                 }
@@ -1040,8 +1043,14 @@ class MetahumanAvatar {
         
         if (this.headMesh && this.headMesh.morphTargetInfluences) {
             const dict = this.headMesh.morphTargetDictionary;
-            const targetIndex = dict.jawOpen !== undefined ? dict.jawOpen : dict.mouthOpen;
-            const smileIndex = dict.mouthSmile !== undefined ? dict.mouthSmile : undefined;
+            let targetIndex = undefined;
+            if (dict.jawOpen !== undefined) targetIndex = dict.jawOpen;
+            else if (dict.mouthOpen !== undefined) targetIndex = dict.mouthOpen;
+            else if (dict.MouthOpen !== undefined) targetIndex = dict.MouthOpen;
+
+            let smileIndex = undefined;
+            if (dict.mouthSmile !== undefined) smileIndex = dict.mouthSmile;
+            else if (dict.Smile !== undefined) smileIndex = dict.Smile;
             
             if (smileIndex !== undefined) {
                 // Subtle random idle smile
