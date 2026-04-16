@@ -1,0 +1,26 @@
+{
+  "name": "nutriai-client",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "parcel index.html --port 5173",
+    "build": "parcel build index.html --dist-dir dist --public-url /",
+    "preview": "parcel serve index.html --port 4173"
+  },
+  "dependencies": {
+    "axios": "^1.7.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.1",
+    "socket.io-client": "^4.7.5"
+  },
+  "devDependencies": {
+    "@parcel/transformer-typescript-types": "^2.13.3",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "buffer": "^6.0.3",
+    "parcel": "^2.13.3",
+    "typescript": "^5.6.3"
+  }
+}

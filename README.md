@@ -1,103 +1,107 @@
-<div align="center">
-  <h1>🥗 NutriAI</h1>
-  <p><strong>Your Personal AI Nutrition & Fitness Assistant</strong></p>
+# NutriAI (MERN)
 
-  <!-- Badges -->
-  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white" />
-  <img src="https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white" />
-  <img src="https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white" />
-</div>
+NutriAI is now migrated to a full MERN architecture with an Express-only runtime:
 
-<br />
+- React frontend (built from `frontend/`)
+- Node.js + Express server (`backend/`) serving both API and frontend
+- MongoDB database
+- Socket.IO real-time token streaming
+- Groq LLM integration for nutrition chat
 
-> **NutriAI** is an intelligent, full-stack, Flask-based application that acts as your personalized nutrition coach. With real-time AI capabilities, robust security layers, and an integrated Metahuman interface, it offers holistic health tracking, chat streaming, and personalized dieting recommendations!
+## Features
 
----
+- JWT-based authentication (register/login/me)
+- Profile setup and profile editing flows
+- Chat history + real-time streaming assistant responses
+- Weight logging and daily target calculation
+- Admin dashboard stats endpoint
+- Docker Compose stack for MongoDB + Express app
 
-## ✨ Key Features
+## Project Structure
 
-| Feature | Description |
-| ------- | ----------- |
-| ⚡ **Live AI Chat** | Ask questions and get real-time token streaming from Groq via WebSockets. |
-| 🤖 **Metahuman Ready** | UI boilerplate prepared for live 3D Avatar streaming (like HeyGen or D-ID). |
-| 🛡️ **Tight Security** | CSRF protection, Flask-Limiter for throttling, and Talisman HTTP headers. |
-| ⚖️ **Weight Tracking**| Log your body weight and visualize your journey toward your goal. |
-| 📊 **Admin Dashboard**| Role-based access control with an internal overview of data and connections. |
+```text
+frontend/      React app (TSX)
+backend/       Express API + Mongoose + Socket.IO + static frontend serving
+start.sh       setup and local/dev helper script
+docker-compose.yml
+Dockerfile     multi-stage image (frontend build + backend runtime)
+```
 
-## 🚀 Quick Start (Docker Setup)
+## Environment Setup
 
-The easiest way to get NutriAI running is through Docker Compose.
+1. Copy the env template:
 
-### 1. Configure the Environment
-Clone the repository and copy the environment template:
 ```bash
 cp .env.example .env
 ```
-Ensure you add your `GROQ_API_KEY` to the `.env` file!
 
-### 2. Run the Stack
-Start both the Flask application and MongoDB containers using Docker Compose.
+2. Required values to review in `.env`:
+
+- `JWT_SECRET`
+- `GROQ_API_KEY`
+- `MONGO_URI` and `MONGO_DB_NAME`
+
+## Run With Docker (Recommended)
+
 ```bash
 docker compose up --build
 ```
-> **Tip:** NutriAI will now be running on `http://localhost:5000`.
 
-## 🤖 Automated Setup Script
+Apps:
 
-NutriAI includes a powerful cross-platform bash script (`scripts/setup-dev.sh`) to simplify environment configuration, dependency installation, and application execution across **Windows, macOS, and various Linux distributions** (Ubuntu, Debian, Fedora, Arch).
+- App (frontend + API): `http://localhost:5000`
+- API health: `http://localhost:5000/api/health`
 
-### Basic Usage
+## Run Locally (Without Docker)
+
+### Build frontend once
+
 ```bash
-./scripts/setup-dev.sh [options]
+cd frontend
+npm install
+npm run build
 ```
 
-### Setup Features
-- **`--create-env`**: Automatically copies `.env.example` to `.env` if missing.
-- **`--all`**: Runs the complete setup by creating `.env`, installing Docker & Cloudflared, and starting the Docker stack and tunnel.
+### Express server (serves API + built frontend)
 
-### Installation Features
-- **`--install-docker`**: Installs Docker Desktop (macOS/Windows via Winget) or Docker Engine (Linux).
-- **`--install-cloudflared`**: Installs Cloudflare's `cloudflared` utility for secure web tunnels.
-- **`--install-mongo-local`**: Installs MongoDB Community Server natively for local environments.
+```bash
+cd backend
+npm install
+npm start
+```
 
-### Execution Features
-- **`--start-docker`**: Builds and starts the application stack using Docker Compose.
-- **`--start-flask`**: Runs the Flask application directly (`python run.py`).
-- **`--start-tunnel`**: Exposes the application securely to the internet via Cloudflare Quick Tunnels.
-- **`--named-tunnel`**: Uses a secure named Cloudflare Tunnel (requires `CLOUDFLARE_TUNNEL_TOKEN` in `.env`).
+## API Endpoints
 
-> **Note:** Options can be seamlessly combined! For example: `./scripts/setup-dev.sh --start-flask --start-tunnel` will test your app locally while sharing it publicly.
+### Auth
 
-## ⚙️ Environment Variables
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 
-NutriAI relies on several configuration keys. Update your `.env` appropriately:
+### User
 
-| Variable | Example Value | Description |
-| -------- | ------------- | ----------- |
-| `SECRET_KEY` | `super-secret` | Flask session cookie secret. |
-| `MONGO_URI` | `mongodb://mongo:27017/` | Connection URI for the database. |
-| `GROQ_API_KEY` | `gsk_XXX` | Required API key for the AI Chat interface. |
-| `GROQ_MODEL` | `llama-3.1-8b-instant` | The model size specified for Groq predictions. |
+- `GET /api/user`
+- `POST /api/profile-setup`
+- `PUT /api/profile`
+- `GET /api/weight-log`
+- `POST /api/weight-log`
 
----
+### Chat
 
-## 🛠 Manual Installation
+- `POST /api/chat`
+- `GET /api/chat-history`
+- `DELETE /api/chat-history`
 
-If you prefer to run it manually without Docker:
-1. Copy `.env.example` to `.env` and set the required variables.
-2. Install MongoDB on your system.
-3. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Start the Application:
-   ```bash
-   python run.py
-   ```
+### Admin
 
-<br />
+- `GET /api/admin/dashboard` (admin only)
 
-<div align="center">
-  <sub>Built with ❤️ by the NutriAI Community</sub>
-</div>
+### Health
+
+- `GET /api/health`
+
+## Notes
+
+- Legacy Flask/Python files have been removed.
+- The active runtime path is the MERN stack under `frontend/` and `backend/`.

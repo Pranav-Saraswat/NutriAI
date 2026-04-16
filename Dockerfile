@@ -1,23 +1,31 @@
-FROM python:3.11-slim
-
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-ENV PIP_NO_CACHE_DIR=1
+FROM node:20-alpine AS frontend-build
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+COPY frontend/package*.json ./
+RUN npm install
 
-COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+COPY frontend/ ./
 
-COPY . .
+RUN npm run build
 
-ENV APP_ENV=production
+FROM node:20-alpine AS backend
+
+WORKDIR /app
+
+# curl is used by the backend container healthcheck in docker-compose.
+RUN apk add --no-cache curl
+
+COPY backend/package*.json ./
+RUN npm install --omit=dev
+
+COPY backend/ ./
+COPY --from=frontend-build /app/dist ./frontend-dist
+
+ENV NODE_ENV=production
 ENV PORT=5000
+ENV FRONTEND_DIST_DIR=/app/frontend-dist
 
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "2", "--threads", "4", "run:app"]
+CMD ["npm", "start"]

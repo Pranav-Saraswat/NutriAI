@@ -1,18 +1,20 @@
 services:
-  web:
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nutriai_web
+      target: backend
+    container_name: nutriai_backend
     ports:
       - "5000:5000"
     env_file:
       - .env
     environment:
-      APP_ENV: production
+      NODE_ENV: production
       MONGO_URI: mongodb://mongo:27017/
       MONGO_DB_NAME: nutriai_db
-      SESSION_COOKIE_SECURE: "False"
+      CLIENT_URL: http://localhost:5000
+      CORS_ORIGINS: http://localhost:5000,http://127.0.0.1:5000
     depends_on:
       mongo:
         condition: service_healthy
