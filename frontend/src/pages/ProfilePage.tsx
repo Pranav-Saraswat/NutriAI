@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
+import { isAxiosError } from "axios";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
@@ -39,7 +40,7 @@ export const ProfilePage = () => {
     });
   }, []);
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
     setMessage("");
@@ -48,7 +49,12 @@ export const ProfilePage = () => {
       const response = await api.put("/profile", form);
       setUser(response.data.data);
       setMessage("Profile updated.");
-    } catch (requestError) {
+    } catch (requestError: unknown) {
+      if (!isAxiosError(requestError)) {
+        setError("Profile update failed.");
+        return;
+      }
+
       const apiErrors = requestError.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length) {
         setError(apiErrors.join(" "));
@@ -64,7 +70,13 @@ export const ProfilePage = () => {
       <form className="stack" onSubmit={handleSubmit}>
         <input type="text" placeholder="Name" value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} required />
         <input type="number" min="1" max="120" placeholder="Age" value={form.age} onChange={(event) => setForm((prev) => ({ ...prev, age: event.target.value }))} required />
-        <select value={form.gender} onChange={(event) => setForm((prev) => ({ ...prev, gender: event.target.value }))} required>
+        <select
+          aria-label="Gender"
+          title="Gender"
+          value={form.gender}
+          onChange={(event) => setForm((prev) => ({ ...prev, gender: event.target.value }))}
+          required
+        >
           <option value="">Gender</option>
           <option value="male">Male</option>
           <option value="female">Female</option>
@@ -72,14 +84,26 @@ export const ProfilePage = () => {
         </select>
         <input type="number" min="50" max="250" placeholder="Height (cm)" value={form.height} onChange={(event) => setForm((prev) => ({ ...prev, height: event.target.value }))} required />
         <input type="number" min="20" max="300" step="0.1" placeholder="Weight (kg)" value={form.weight} onChange={(event) => setForm((prev) => ({ ...prev, weight: event.target.value }))} required />
-        <select value={form.goal_type} onChange={(event) => setForm((prev) => ({ ...prev, goal_type: event.target.value }))} required>
+        <select
+          aria-label="Goal"
+          title="Goal"
+          value={form.goal_type}
+          onChange={(event) => setForm((prev) => ({ ...prev, goal_type: event.target.value }))}
+          required
+        >
           <option value="">Goal</option>
           <option value="weight_loss">Weight loss</option>
           <option value="muscle_gain">Muscle gain</option>
           <option value="maintain">Maintain</option>
           <option value="improve_health">Improve health</option>
         </select>
-        <select value={form.activity_level} onChange={(event) => setForm((prev) => ({ ...prev, activity_level: event.target.value }))} required>
+        <select
+          aria-label="Activity level"
+          title="Activity level"
+          value={form.activity_level}
+          onChange={(event) => setForm((prev) => ({ ...prev, activity_level: event.target.value }))}
+          required
+        >
           <option value="">Activity level</option>
           <option value="sedentary">Sedentary</option>
           <option value="light">Light</option>

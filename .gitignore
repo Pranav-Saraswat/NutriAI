@@ -12,6 +12,8 @@ dist/
 build/
 frontend/dist/
 frontend/build/
+.parcel-cache/
+frontend/.parcel-cache/
 
 # Logs
 *.log

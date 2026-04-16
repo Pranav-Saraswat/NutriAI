@@ -1,9 +1,9 @@
 # NutriAI (MERN)
 
-NutriAI is now migrated to a full MERN architecture with an Express-only runtime:
+NutriAI is now migrated to a full MERN architecture:
 
 - React frontend (built from `frontend/`)
-- Node.js + Express server (`backend/`) serving both API and frontend
+- Node.js + Express API server (`backend/`)
 - MongoDB database
 - Socket.IO real-time token streaming
 - Groq LLM integration for nutrition chat
@@ -15,16 +15,17 @@ NutriAI is now migrated to a full MERN architecture with an Express-only runtime
 - Chat history + real-time streaming assistant responses
 - Weight logging and daily target calculation
 - Admin dashboard stats endpoint
-- Docker Compose stack for MongoDB + Express app
+- Docker Compose stack for MongoDB + API + frontend (Nginx)
 
 ## Project Structure
 
 ```text
-frontend/      React app (TSX)
-backend/       Express API + Mongoose + Socket.IO + static frontend serving
+frontend/      React app (TSX) + Nginx config + Dockerfile
+backend/       Express API + Mongoose + Socket.IO + Dockerfile
 start.sh       setup and local/dev helper script
 docker-compose.yml
-Dockerfile     multi-stage image (frontend build + backend runtime)
+backend/Dockerfile
+frontend/Dockerfile
 ```
 
 ## Environment Setup
@@ -49,27 +50,27 @@ docker compose up --build
 
 Apps:
 
-- App (frontend + API): `http://localhost:5000`
+- Frontend: `http://localhost:5173`
+- API: `http://localhost:5000`
 - API health: `http://localhost:5000/api/health`
 
 ## Run Locally (Without Docker)
 
-### Build frontend once
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-### Express server (serves API + built frontend)
+### API server
 
 ```bash
 cd backend
 npm install
-npm start
+npm run dev
 ```
 
+### React client
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
 ## API Endpoints
 
 ### Auth
@@ -105,3 +106,17 @@ npm start
 
 - Legacy Flask/Python files have been removed.
 - The active runtime path is the MERN stack under `frontend/` and `backend/`.
+
+## Maintenance
+
+Use the Docker cleanup helper to reclaim local Docker storage:
+
+```bash
+./start.sh --clean-docker
+```
+
+To also prune unused volumes:
+
+```bash
+./start.sh --clean-docker-volumes
+```

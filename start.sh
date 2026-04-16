@@ -15,6 +15,8 @@ START_API=false
 START_CLIENT=false
 START_TUNNEL=false
 USE_NAMED_TUNNEL=false
+CLEAN_DOCKER=false
+CLEAN_DOCKER_VOLUMES=false
 ALL=false
 TUNNEL_URL_FILE=""
 APP_URL=""
@@ -38,11 +40,13 @@ Options:
   --install-docker      Install Docker Engine and Docker Compose plugin on Ubuntu/Debian
   --install-cloudflared Install cloudflared on Ubuntu/Debian
   --install-mongo-local Install MongoDB Community locally on Ubuntu or Debian 11
-  --start-docker        Start the MERN app stack (Express + MongoDB) with docker compose up --build -d
+  --start-docker        Start the MERN app stack (backend + frontend + MongoDB) with docker compose up --build -d
   --start-api           Start the Express server locally via npm run dev in backend/
   --start-client        Start the React client locally via npm run dev in frontend/ (optional)
   --start-tunnel        Start a Cloudflare Tunnel for the app
   --named-tunnel        Use CLOUDFLARE_TUNNEL_TOKEN for a named Cloudflare Tunnel
+  --clean-docker        Prune stopped containers, unused images/networks, and builder cache
+  --clean-docker-volumes Prune Docker volumes too (can remove cached DB data)
   --tunnel-url URL      Local app URL to expose with Cloudflare Tunnel
   --help                Show this help text
 
@@ -53,6 +57,8 @@ Examples:
   ./start.sh --start-tunnel
   ./start.sh --start-tunnel --named-tunnel
   ./start.sh --start-api --start-client
+  ./start.sh --clean-docker
+  ./start.sh --clean-docker-volumes
 EOF
 }
 
@@ -362,6 +368,35 @@ start_cloudflare_tunnel() {
   exit ${PIPESTATUS[0]}
 }
 
+clean_docker_storage() {
+  local prune_volumes="${1:-false}"
+
+  need_cmd docker
+
+  if ! docker info >/dev/null 2>&1; then
+    fail "Docker daemon is not reachable."
+  fi
+
+  log "Pruning stopped Docker containers..."
+  docker container prune -f
+
+  log "Pruning unused Docker images..."
+  docker image prune -af
+
+  log "Pruning unused Docker networks..."
+  docker network prune -f
+
+  log "Pruning Docker builder cache..."
+  docker builder prune -af
+
+  if [[ "$prune_volumes" == true ]]; then
+    log "Pruning unused Docker volumes..."
+    docker volume prune -f
+  fi
+
+  log "Docker cleanup complete."
+}
+
 main() {
   detect_os
 
@@ -382,6 +417,8 @@ main() {
       --start-client) START_CLIENT=true ;;
       --start-tunnel) START_TUNNEL=true ;;
       --named-tunnel) START_TUNNEL=true; USE_NAMED_TUNNEL=true ;;
+      --clean-docker) CLEAN_DOCKER=true ;;
+      --clean-docker-volumes) CLEAN_DOCKER=true; CLEAN_DOCKER_VOLUMES=true ;;
       --tunnel-url)
         shift
         APP_URL="${1:-}"
@@ -404,6 +441,7 @@ main() {
   $INSTALL_DOCKER && install_docker
   $INSTALL_CLOUDFLARED && install_cloudflared
   $INSTALL_LOCAL_MONGO && install_local_mongo
+  $CLEAN_DOCKER && clean_docker_storage "$CLEAN_DOCKER_VOLUMES"
 
   if [[ "$START_API" == true && "$START_TUNNEL" == true ]]; then
     log "Starting API and Cloudflare Tunnel simultaneously..."
