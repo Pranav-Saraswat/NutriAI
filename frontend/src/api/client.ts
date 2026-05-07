@@ -7,9 +7,11 @@ const normalizeApiBase = (value: string) => {
 };
 
 const configuredApiBase = process.env.PARCEL_PUBLIC_API_BASE_URL?.trim();
+const isLocalFrontend = ["localhost", "127.0.0.1"].includes(window.location.hostname);
 const localApiBase = window.location.port === "5000" ? "/api" : "http://localhost:5000/api";
+const defaultApiBase = isLocalFrontend ? localApiBase : "/api";
 
-export const API_BASE = configuredApiBase ? normalizeApiBase(configuredApiBase) : localApiBase;
+export const API_BASE = configuredApiBase ? normalizeApiBase(configuredApiBase) : defaultApiBase;
 export const API_ROOT = API_BASE.replace(/\/api$/, "");
 
 export const api = axios.create({

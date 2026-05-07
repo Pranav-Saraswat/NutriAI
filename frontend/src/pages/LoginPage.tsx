@@ -33,7 +33,7 @@ export const LoginPage = () => {
       }
 
       if (!requestError.response) {
-        setError("Cannot reach the API server. Start the backend on port 5000 and try again.");
+        setError("Cannot reach the API server. Check your deployed API configuration and try again.");
         return;
       }
 
