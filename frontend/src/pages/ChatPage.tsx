@@ -29,46 +29,94 @@ const renderInline = (value: string): ReactNode[] => {
 
 const ChatContent = ({ content }: { content: string }) => {
   const lines = content.split(/\r?\n/);
+  const blocks: ReactNode[] = [];
 
-  return (
-    <div className="message-content">
-      {lines.map((line, index) => {
-        const trimmed = line.trim();
-        const key = `${index}-${trimmed}`;
+  for (let index = 0; index < lines.length; index += 1) {
+    const trimmed = lines[index].trim();
 
-        if (!trimmed) {
-          return <span key={key} className="message-break" aria-hidden="true" />;
-        }
+    if (trimmed.includes("|") && lines[index + 1]?.trim().match(/^\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?$/)) {
+      const tableLines: string[] = [trimmed];
+      index += 2;
 
-        const heading = trimmed.match(/^\*\*(.+):\*\*$/);
-        if (heading) {
-          return <h4 key={key}>{heading[1]}</h4>;
-        }
+      while (index < lines.length && lines[index].trim().includes("|")) {
+        tableLines.push(lines[index].trim());
+        index += 1;
+      }
+      index -= 1;
 
-        const bullet = trimmed.match(/^[-*]\s+(.+)$/);
-        if (bullet) {
-          return (
-            <p key={key} className="message-list-item">
-              <span aria-hidden="true" />
-              <span>{renderInline(bullet[1])}</span>
-            </p>
-          );
-        }
+      const rows = tableLines.map((line) =>
+        line
+          .replace(/^\|/, "")
+          .replace(/\|$/, "")
+          .split("|")
+          .map((cell) => cell.trim())
+      );
+      const [header, ...body] = rows;
 
-        const numbered = trimmed.match(/^(\d+)\.\s+(.+)$/);
-        if (numbered) {
-          return (
-            <p key={key} className="message-list-item numbered">
-              <span>{numbered[1]}</span>
-              <span>{renderInline(numbered[2])}</span>
-            </p>
-          );
-        }
+      blocks.push(
+        <div key={`table-${index}`} className="message-table-wrap">
+          <table className="message-table">
+            <thead>
+              <tr>
+                {header.map((cell, cellIndex) => (
+                  <th key={`${cell}-${cellIndex}`}>{renderInline(cell)}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {body.map((row, rowIndex) => (
+                <tr key={`row-${rowIndex}`}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={`${cell}-${cellIndex}`}>{renderInline(cell)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+      continue;
+    }
 
-        return <p key={key}>{renderInline(trimmed)}</p>;
-      })}
-    </div>
-  );
+    const key = `${index}-${trimmed}`;
+
+    if (!trimmed) {
+      blocks.push(<span key={key} className="message-break" aria-hidden="true" />);
+      continue;
+    }
+
+    const heading = trimmed.match(/^\*\*(.+):\*\*$/);
+    if (heading) {
+      blocks.push(<h4 key={key}>{heading[1]}</h4>);
+      continue;
+    }
+
+    const bullet = trimmed.match(/^[-*]\s+(.+)$/);
+    if (bullet) {
+      blocks.push(
+        <p key={key} className="message-list-item">
+          <span aria-hidden="true" />
+          <span>{renderInline(bullet[1])}</span>
+        </p>
+      );
+      continue;
+    }
+
+    const numbered = trimmed.match(/^(\d+)\.\s+(.+)$/);
+    if (numbered) {
+      blocks.push(
+        <p key={key} className="message-list-item numbered">
+          <span>{numbered[1]}</span>
+          <span>{renderInline(numbered[2])}</span>
+        </p>
+      );
+      continue;
+    }
+
+    blocks.push(<p key={key}>{renderInline(trimmed)}</p>);
+  }
+
+  return <div className="message-content">{blocks}</div>;
 };
 
 export const ChatPage = () => {

@@ -956,6 +956,57 @@ textarea {
   font-weight: 900;
 }
 
+.message-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  background: rgba(8, 10, 15, 0.34);
+}
+
+.message-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.message-table th,
+.message-table td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.message-table th {
+  position: sticky;
+  top: 0;
+  background: #111925;
+  color: var(--primary);
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  z-index: 1;
+}
+
+.message-table td:first-child {
+  color: var(--ink);
+  font-weight: 800;
+}
+
+.message-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.message-table th:last-child,
+.message-table td:last-child {
+  border-right: 0;
+}
+
 .typing-note {
   margin: 0;
   color: var(--muted);
