@@ -35,6 +35,12 @@ export interface ChatMessage {
   created_at?: string;
 }
 
+export interface WeightLog {
+  id: string;
+  weight_kg: number;
+  created_at: string;
+}
+
 export interface AuthPayload {
   token: string;
   data: {

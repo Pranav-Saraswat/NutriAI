@@ -13,7 +13,9 @@ export const Layout = () => {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <Link className="brand" to="/">NutriAI</Link>
+        <Link className="brand" to="/">
+          <span>Nutri</span>AI
+        </Link>
         <nav className="nav-links">
           {isAuthenticated ? (
             <>
@@ -32,7 +34,7 @@ export const Layout = () => {
       <main className="page-shell">
         <Outlet />
       </main>
-      <footer className="footer">{user ? `Signed in as ${user.name}` : "NutriAI - AI Nutrition Coach"}</footer>
+      <footer className="footer">{user ? `Signed in as ${user.name}` : "NutriAI - Gym diet and nutrition coach"}</footer>
     </div>
   );
 };
