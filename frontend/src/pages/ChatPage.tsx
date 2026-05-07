@@ -1,10 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { AxiosError } from "axios";
 import { io } from "socket.io-client";
-import { api } from "../api/client";
+import { API_ROOT, api } from "../api/client";
 import type { ChatMessage, UserProfile, WeightLog } from "../types/api";
-
-const API_ROOT = (window.location.port === "5000" ? "/api" : "http://localhost:5000/api").replace(/\/api$/, "");
 
 export const ChatPage = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
