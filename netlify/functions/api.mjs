@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { createApp } from "../../backend/src/app.js";
 import { connectDb } from "../../backend/src/config/db.js";
 
-const require = createRequire(new URL("../../backend/package.json", import.meta.url));
+const require = createRequire(`${process.cwd()}/backend/package.json`);
 const express = require("express");
 const serverless = require("serverless-http");
 

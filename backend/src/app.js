@@ -4,7 +4,6 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import path from "path";
 import { existsSync } from "fs";
-import { fileURLToPath } from "url";
 import { env } from "./config/env.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
@@ -12,10 +11,7 @@ import chatRoutes from "./routes/chatRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import healthRoutes from "./routes/healthRoutes.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const defaultFrontendDistPath = path.resolve(__dirname, "../../frontend/dist");
+const defaultFrontendDistPath = path.resolve(process.cwd(), "frontend/dist");
 const frontendDistPath = process.env.FRONTEND_DIST_DIR || defaultFrontendDistPath;
 const frontendIndexPath = path.join(frontendDistPath, "index.html");
 
