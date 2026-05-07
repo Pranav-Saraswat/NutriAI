@@ -13,13 +13,13 @@
 ## 📸 Preview
 
 <p align="center">
-  <img src="./assets/landing.png" alt="NutriAI Landing Page" width="90%" />
+  <img src="./assets/LoginPage.png" alt="NutriAI Landing Page" width="90%" />
   <br>
   <i>The NutriAI Landing Page - Discipline in every rep, and every meal.</i>
 </p>
 
 <p align="center">
-  <img src="./assets/dashboard.png" alt="NutriAI Dashboard" width="90%" />
+  <img src="./assets/MainPage.png" alt="NutriAI Dashboard" width="90%" />
   <br>
   <i>The Athlete Console - Real-time tracking and AI coaching.</i>
 </p>
