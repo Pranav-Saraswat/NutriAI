@@ -25,8 +25,19 @@ Use:
 
 Never return long unstructured paragraphs.
 
+RULE 3 - SHORT GREETINGS
+If the user only greets you, respond briefly and do not create a diet plan yet.
+Use exactly this style:
+"Hello! How can I help you with your diet plan today?"
+
 USER PROFILE DATA:
 ${profileSummary}`;
+
+const greetingRegex = /^(hi|hello|hey|hii|hiii|good morning|good afternoon|good evening|namaste|yo)[!.?\s]*$/i;
+
+export const isShortGreeting = (message) => greetingRegex.test(String(message || "").trim());
+
+export const greetingResponse = "Hello! How can I help you with your diet plan today?";
 
 const normalizeResponse = (content) => {
   if (typeof content === "string") return content.trim();
@@ -48,7 +59,7 @@ class LlmService {
 
   buildMessages(userMessage, profileSummary, chatHistory = []) {
     const messages = [{ role: "system", content: getSystemPrompt(profileSummary) }];
-    for (const message of chatHistory.slice(-10)) {
+    for (const message of chatHistory.slice(-env.chatHistoryLimit)) {
       messages.push({ role: message.role, content: message.content });
     }
     if (!chatHistory.length) {
@@ -67,7 +78,7 @@ class LlmService {
         model: env.groqModel,
         messages: this.buildMessages(userMessage, profileSummary, chatHistory),
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: env.chatMaxTokens,
         stream: false,
       });
 
@@ -91,7 +102,7 @@ class LlmService {
         model: env.groqModel,
         messages: this.buildMessages(userMessage, profileSummary, chatHistory),
         temperature: 0.7,
-        max_tokens: 600,
+        max_tokens: env.chatMaxTokens,
         stream: true,
       });
 

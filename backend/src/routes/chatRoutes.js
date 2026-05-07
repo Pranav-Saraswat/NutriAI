@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { authRequired } from "../middleware/auth.js";
 import { ChatMessage } from "../models/ChatMessage.js";
-import { llmService } from "../services/llmService.js";
+import { env } from "../config/env.js";
+import { greetingResponse, isShortGreeting, llmService } from "../services/llmService.js";
 
 const router = Router();
 
@@ -14,13 +15,18 @@ router.post("/chat", authRequired, async (req, res) => {
 
     const recent = await ChatMessage.find({ userId: req.user._id })
       .sort({ createdAt: -1 })
-      .limit(15)
+      .limit(env.chatHistoryLimit)
       .lean();
 
     const chatHistory = recent.reverse().map((msg) => ({ role: msg.role, content: msg.content }));
     chatHistory.push({ role: "user", content: userMessage });
 
     await ChatMessage.create({ userId: req.user._id, role: "user", content: userMessage });
+
+    if (isShortGreeting(userMessage)) {
+      await ChatMessage.create({ userId: req.user._id, role: "assistant", content: greetingResponse });
+      return res.json({ success: true, response: greetingResponse });
+    }
 
     const result = await llmService.chat(userMessage, req.user.getProfileSummary(), chatHistory);
 
@@ -44,7 +50,7 @@ router.delete("/chat-history", authRequired, async (req, res) => {
 router.get("/chat-history", authRequired, async (req, res) => {
   const messages = await ChatMessage.find({ userId: req.user._id })
     .sort({ createdAt: 1 })
-    .limit(50)
+    .limit(100)
     .lean();
 
   return res.json({

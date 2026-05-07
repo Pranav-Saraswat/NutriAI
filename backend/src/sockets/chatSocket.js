@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env.js";
 import { User } from "../models/User.js";
 import { ChatMessage } from "../models/ChatMessage.js";
-import { llmService } from "../services/llmService.js";
+import { greetingResponse, isShortGreeting, llmService } from "../services/llmService.js";
 
 const resolveUser = async (socket) => {
   const token = socket.handshake?.auth?.token;
@@ -29,11 +29,20 @@ export const attachChatSocket = (io) => {
       const userMessage = String(data?.message || "").trim();
       if (!userMessage) return;
 
-      const recent = await ChatMessage.find({ userId: user._id }).sort({ createdAt: -1 }).limit(15).lean();
+      const recent = await ChatMessage.find({ userId: user._id }).sort({ createdAt: -1 }).limit(env.chatHistoryLimit).lean();
       const chatHistory = recent.reverse().map((msg) => ({ role: msg.role, content: msg.content }));
       chatHistory.push({ role: "user", content: userMessage });
 
       await ChatMessage.create({ userId: user._id, role: "user", content: userMessage });
+
+      if (isShortGreeting(userMessage)) {
+        socket.emit("chat_status", { status: "typing" });
+        socket.emit("chat_token", { token: greetingResponse });
+        await ChatMessage.create({ userId: user._id, role: "assistant", content: greetingResponse });
+        socket.emit("chat_status", { status: "done" });
+        return;
+      }
+
       socket.emit("chat_status", { status: "typing" });
 
       const result = await llmService.chatStream(

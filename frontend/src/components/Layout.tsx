@@ -1,4 +1,4 @@
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export const Layout = () => {
@@ -19,8 +19,8 @@ export const Layout = () => {
         <nav className="nav-links">
           {isAuthenticated ? (
             <>
-              <Link to="/chat">Chat</Link>
-              <Link to="/profile">Profile</Link>
+              <NavLink to="/chat" className={({ isActive }) => (isActive ? "active" : undefined)}>Chat</NavLink>
+              <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : undefined)}>Profile</NavLink>
               <button type="button" className="ghost-btn" onClick={handleLogout}>Logout</button>
             </>
           ) : (

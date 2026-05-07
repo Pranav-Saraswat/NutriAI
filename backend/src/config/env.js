@@ -20,6 +20,8 @@ export const env = {
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "30d",
   groqApiKey: process.env.GROQ_API_KEY || "",
   groqModel: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+  chatMaxTokens: Number(process.env.CHAT_MAX_TOKENS || 1200),
+  chatHistoryLimit: Number(process.env.CHAT_HISTORY_LIMIT || 30),
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
   corsOrigins: (process.env.CORS_ORIGINS || "http://localhost:5173,http://127.0.0.1:5173")
     .split(",")
