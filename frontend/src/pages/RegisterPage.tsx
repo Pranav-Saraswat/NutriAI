@@ -39,12 +39,17 @@ export const RegisterPage = () => {
         return;
       }
 
-      const apiErrors = requestError.response?.data?.errors;
+      const responseData = requestError.response?.data;
+      const apiErrors = responseData?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length) {
         setError(apiErrors.join(" "));
         return;
       }
-      setError(requestError.response?.data?.error || "Registration failed.");
+      if (typeof responseData === "string" && responseData.trim()) {
+        setError(responseData);
+        return;
+      }
+      setError(responseData?.error || responseData?.message || "Registration failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -99,7 +104,7 @@ export const RegisterPage = () => {
             type="password"
             placeholder="Create a password"
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
             value={form.password}
             onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
             required
@@ -112,7 +117,7 @@ export const RegisterPage = () => {
             type="password"
             placeholder="Repeat your password"
             autoComplete="new-password"
-            minLength={6}
+            minLength={8}
             value={form.confirm_password}
             onChange={(event) => setForm((prev) => ({ ...prev, confirm_password: event.target.value }))}
             required

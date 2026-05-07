@@ -17,7 +17,8 @@ app.use(async (req, _res, next) => {
     await dbConnection;
     next();
   } catch (error) {
-    next(error);
+    console.error("Database connection failed", error);
+    next(new Error("Database connection failed. Check MONGO_URI in Netlify environment variables."));
   }
 });
 
@@ -30,5 +31,12 @@ app.use((req, _res, next) => {
 });
 
 app.use(apiApp);
+
+app.use((err, _req, res, _next) => {
+  res.status(500).json({
+    success: false,
+    error: err.message || "API request failed",
+  });
+});
 
 export const handler = serverless(app);
