@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isAxiosError } from "axios";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 
@@ -19,7 +20,17 @@ export const RegisterPage = () => {
     try {
       await api.post("/auth/register", form);
       navigate("/login");
-    } catch (requestError) {
+    } catch (requestError: unknown) {
+      if (!isAxiosError(requestError)) {
+        setError("Registration failed.");
+        return;
+      }
+
+      if (!requestError.response) {
+        setError("Cannot reach the API server. Start the backend on port 5000 and try again.");
+        return;
+      }
+
       const apiErrors = requestError.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length) {
         setError(apiErrors.join(" "));
