@@ -18,7 +18,7 @@ app.use(async (req, _res, next) => {
     next();
   } catch (error) {
     console.error("Database connection failed", error);
-    next(new Error("Database connection failed. Check MONGO_URI in Netlify environment variables."));
+    next(new Error("Database connection failed. Check your MongoDB Atlas MONGO_URI, database user password, and Network Access allowlist."));
   }
 });
 
