@@ -3,6 +3,32 @@ import { isAxiosError } from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 
+const getRegisterErrorMessage = (status: number, responseData: unknown) => {
+  if (typeof responseData === "string" && responseData.trim()) {
+    return responseData;
+  }
+
+  if (responseData && typeof responseData === "object") {
+    const data = responseData as { errors?: unknown; error?: unknown; message?: unknown };
+
+    if (Array.isArray(data.errors) && data.errors.length) {
+      return data.errors.join(" ");
+    }
+
+    if (typeof data.error === "string" && data.error.trim()) {
+      return data.error;
+    }
+
+    if (typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+
+    return `Registration failed (${status}): ${JSON.stringify(responseData)}`;
+  }
+
+  return `Registration failed (${status}).`;
+};
+
 export const RegisterPage = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -39,17 +65,7 @@ export const RegisterPage = () => {
         return;
       }
 
-      const responseData = requestError.response?.data;
-      const apiErrors = responseData?.errors;
-      if (Array.isArray(apiErrors) && apiErrors.length) {
-        setError(apiErrors.join(" "));
-        return;
-      }
-      if (typeof responseData === "string" && responseData.trim()) {
-        setError(responseData);
-        return;
-      }
-      setError(responseData?.error || responseData?.message || "Registration failed.");
+      setError(getRegisterErrorMessage(requestError.response.status, requestError.response.data));
     } finally {
       setIsSubmitting(false);
     }
