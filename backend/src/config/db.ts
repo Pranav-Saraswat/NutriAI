@@ -1,11 +1,11 @@
 import mongoose from "mongoose";
 import { env } from "./env.js";
 
-let connectionPromise;
+let connectionPromise: Promise<typeof mongoose> | null = null;
 
-export const connectDb = async () => {
+export const connectDb = async (): Promise<typeof mongoose> => {
   if (mongoose.connection.readyState === 1) {
-    return mongoose.connection;
+    return mongoose;
   }
 
   if (!env.mongoUri) {
@@ -20,7 +20,7 @@ export const connectDb = async () => {
 
   try {
     await connectionPromise;
-    return mongoose.connection;
+    return mongoose;
   } catch (error) {
     connectionPromise = null;
     throw error;

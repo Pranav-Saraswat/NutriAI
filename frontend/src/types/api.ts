@@ -47,3 +47,70 @@ export interface AuthPayload {
     user: UserProfile;
   };
 }
+
+export interface FoodItem {
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  portionSize: string;
+  confidence: number;
+}
+
+export interface Meal {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  imageUrl: string | null;
+  items: FoodItem[];
+  confidenceScore: number;
+  isCorrected: boolean;
+  correctedAt?: string | null;
+  date: string;
+  notes?: string;
+}
+
+export interface DailySummary {
+  date: string;
+  targets: {
+    calories: number;
+    protein: number;
+    water: number;
+    steps: number;
+  } | null;
+  totals: {
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    water: number;
+    steps: number;
+  };
+}
+
+export interface WeeklyDayLog {
+  date: string;
+  calories: number;
+  protein: number;
+  water: number;
+  steps: number;
+  weight?: number;
+}
+
+export interface RecommendationItem {
+  title: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  description: string;
+}
+
+export interface RecommendationsResponse {
+  recommendations: RecommendationItem[];
+}
+

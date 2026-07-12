@@ -1,15 +1,13 @@
 import { createRequire } from "node:module";
-import { createApp } from "../../backend/src/app.js";
-import { connectDb } from "../../backend/src/config/db.js";
-
-const require = createRequire(`${process.cwd()}/backend/package.json`);
-const express = require("express");
-const serverless = require("serverless-http");
+import { createApp } from "../../backend/dist/app.js";
+import { connectDb } from "../../backend/dist/config/db.js";
+import express from "express";
+import serverless from "serverless-http";
 
 const app = express();
 const apiApp = createApp();
 
-let dbConnection;
+let dbConnection: Promise<any>;
 
 app.use(async (req, _res, next) => {
   try {
@@ -32,7 +30,7 @@ app.use((req, _res, next) => {
 
 app.use(apiApp);
 
-app.use((err, _req, res, _next) => {
+app.use((err: any, _req: any, res: any, _next: any) => {
   res.status(500).json({
     success: false,
     error: err.message || "API request failed",

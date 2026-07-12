@@ -1,11 +1,11 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { authRequired, adminRequired } from "../middleware/auth.js";
 import { User } from "../models/User.js";
 import { ChatMessage } from "../models/ChatMessage.js";
 
 const router = Router();
 
-router.get("/admin/dashboard", authRequired, adminRequired, async (_req, res) => {
+router.get("/admin/dashboard", authRequired, adminRequired, async (_req: Request, res: Response) => {
   const [totalUsers, totalMessages] = await Promise.all([
     User.countDocuments({}),
     ChatMessage.countDocuments({}),

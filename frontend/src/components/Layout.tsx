@@ -19,7 +19,10 @@ export const Layout = () => {
         <nav className="nav-links">
           {isAuthenticated ? (
             <>
+              <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "active" : undefined)}>Dashboard</NavLink>
               <NavLink to="/chat" className={({ isActive }) => (isActive ? "active" : undefined)}>Chat</NavLink>
+              <NavLink to="/analytics" className={({ isActive }) => (isActive ? "active" : undefined)}>Analytics</NavLink>
+              <NavLink to="/recommendations" className={({ isActive }) => (isActive ? "active" : undefined)}>Recommendations</NavLink>
               <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : undefined)}>Profile</NavLink>
               <button type="button" className="ghost-btn" onClick={handleLogout}>Logout</button>
             </>

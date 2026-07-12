@@ -18,6 +18,8 @@ services:
       mongo:
         condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - uploads_data:/app/uploads
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:5000/api/health"]
       interval: 30s
@@ -57,3 +59,4 @@ services:
 
 volumes:
   mongodb_data:
+  uploads_data:

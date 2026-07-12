@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { authRequired } from "../middleware/auth.js";
 import { ChatMessage } from "../models/ChatMessage.js";
 import { env } from "../config/env.js";
@@ -6,11 +6,15 @@ import { greetingResponse, isShortGreeting, llmService } from "../services/llmSe
 
 const router = Router();
 
-router.post("/chat", authRequired, async (req, res) => {
+router.post("/chat", authRequired, async (req: Request, res: Response) => {
   try {
     const userMessage = String(req.body?.message || "").trim();
     if (!userMessage) {
       return res.status(400).json({ success: false, error: "Empty message" });
+    }
+
+    if (!req.user) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
     }
 
     const recent = await ChatMessage.find({ userId: req.user._id })
@@ -18,7 +22,10 @@ router.post("/chat", authRequired, async (req, res) => {
       .limit(env.chatHistoryLimit)
       .lean();
 
-    const chatHistory = recent.reverse().map((msg) => ({ role: msg.role, content: msg.content }));
+    const chatHistory = recent.reverse().map((msg) => ({
+      role: msg.role as "user" | "assistant" | "system",
+      content: msg.content,
+    }));
     chatHistory.push({ role: "user", content: userMessage });
 
     await ChatMessage.create({ userId: req.user._id, role: "user", content: userMessage });
@@ -37,17 +44,23 @@ router.post("/chat", authRequired, async (req, res) => {
     await ChatMessage.create({ userId: req.user._id, role: "assistant", content: result.response });
 
     return res.json({ success: true, response: result.response });
-  } catch (error) {
+  } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message || "Something went wrong while processing your message." });
   }
 });
 
-router.delete("/chat-history", authRequired, async (req, res) => {
+router.delete("/chat-history", authRequired, async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
   await ChatMessage.deleteMany({ userId: req.user._id });
   return res.json({ success: true, message: "Chat history cleared" });
 });
 
-router.get("/chat-history", authRequired, async (req, res) => {
+router.get("/chat-history", authRequired, async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
   const messages = await ChatMessage.find({ userId: req.user._id })
     .sort({ createdAt: 1 })
     .limit(100)

@@ -1154,3 +1154,365 @@ textarea {
     display: none;
   }
 }
+
+/* Dashboard & Features Styles */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 992px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dashboard-hero {
+  background: linear-gradient(135deg, rgba(21, 28, 40, 0.95), rgba(12, 16, 24, 0.95));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.progress-rings-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.progress-ring-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(21, 28, 40, 0.6);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+
+.progress-ring-card svg {
+  margin-bottom: 0.5rem;
+}
+
+.ring-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.ring-label strong {
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+
+.ring-label span {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.upload-section {
+  border: 2px dashed var(--line);
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(16, 21, 31, 0.4);
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s;
+  position: relative;
+}
+
+.upload-section.dragover {
+  border-color: var(--primary);
+  background: rgba(185, 241, 63, 0.04);
+}
+
+.upload-section input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-icon {
+  font-size: 2.5rem;
+  color: var(--primary);
+  margin-bottom: 0.5rem;
+}
+
+.upload-text {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.upload-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 10, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: linear-gradient(180deg, var(--surface), var(--bg-2));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  font-size: 1.4rem;
+}
+
+.modal-body {
+  padding: 1.25rem;
+}
+
+.modal-footer {
+  padding: 1.25rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.close-btn:hover {
+  color: var(--ink);
+}
+
+.ai-editor-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 576px) {
+  .ai-editor-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ai-preview-img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+
+.logged-meals-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.meal-card-item {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(21, 28, 40, 0.4);
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: border-color 0.2s;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.meal-card-item:hover {
+  border-color: rgba(185, 241, 63, 0.2);
+}
+
+.meal-card-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.meal-card-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.meal-card-text h4 {
+  font-size: 1.1rem;
+  margin-bottom: 0.15rem;
+}
+
+.meal-card-text p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.meal-card-macros {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.meal-card-macros span strong {
+  color: var(--ink);
+}
+
+.meal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.activity-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.activity-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(21, 28, 40, 0.4);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.quick-log-btn {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ink);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.quick-log-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--muted);
+}
+
+.chart-wrapper {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(16, 21, 31, 0.6);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+.recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.recommendation-card {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--surface), rgba(12, 16, 24, 0.8));
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.recommendation-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.recommendation-card h3 {
+  font-size: 1.25rem;
+  color: var(--primary);
+}
+
+.recommendation-card p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.recommendation-macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.recommendation-macros span {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 0.2rem 0.55rem;
+}
+
+.spinner {
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-left-color: var(--primary);
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 0.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

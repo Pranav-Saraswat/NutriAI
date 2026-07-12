@@ -24,7 +24,7 @@ export const LoginPage = () => {
       if (!payload.data.user.age || !payload.data.user.goal_type) {
         navigate("/profile-setup");
       } else {
-        navigate("/chat");
+        navigate("/dashboard");
       }
     } catch (requestError: unknown) {
       if (!isAxiosError(requestError)) {

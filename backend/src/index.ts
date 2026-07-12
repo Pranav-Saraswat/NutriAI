@@ -5,7 +5,7 @@ import { connectDb } from "./config/db.js";
 import { env } from "./config/env.js";
 import { attachChatSocket } from "./sockets/chatSocket.js";
 
-const bootstrap = async () => {
+const bootstrap = async (): Promise<void> => {
   await connectDb();
 
   const app = createApp();

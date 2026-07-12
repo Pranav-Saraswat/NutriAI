@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -10,12 +10,13 @@ import userRoutes from "./routes/userRoutes.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import healthRoutes from "./routes/healthRoutes.js";
+import mealRoutes from "./routes/mealRoutes.js"; // New
 
 const defaultFrontendDistPath = path.resolve(process.cwd(), "frontend/dist");
 const frontendDistPath = process.env.FRONTEND_DIST_DIR || defaultFrontendDistPath;
 const frontendIndexPath = path.join(frontendDistPath, "index.html");
 
-export const createApp = () => {
+export const createApp = (): Express => {
   const app = express();
 
   if (env.trustProxy) {
@@ -29,7 +30,10 @@ export const createApp = () => {
       credentials: true,
     })
   );
-  app.use(express.json({ limit: "1mb" }));
+  app.use(express.json({ limit: "5mb" })); // Increase limit to support large base64 uploads if needed
+
+  // Serve image uploads statically
+  app.use("/uploads", express.static(path.resolve(process.cwd(), "uploads")));
 
   app.use(
     "/api",
@@ -46,15 +50,17 @@ export const createApp = () => {
   app.use("/api", userRoutes);
   app.use("/api", chatRoutes);
   app.use("/api", adminRoutes);
+  app.use("/api", mealRoutes); // New meal tracking routes
 
   if (existsSync(frontendIndexPath)) {
     app.use(express.static(frontendDistPath));
-    app.get(/^\/(?!api(?:\/|$)|socket\.io(?:\/|$)).*/, (_req, res) => {
+    app.get(/^\/(?!api(?:\/|$)|socket\.io(?:\/|$)).*/, (_req: Request, res: Response) => {
       return res.sendFile(frontendIndexPath);
     });
   }
 
-  app.use((err, _req, res, _next) => {
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    console.error("Unhandled error:", err);
     return res.status(500).json({ success: false, error: err.message || "Internal server error" });
   });
 

@@ -29,7 +29,7 @@ export const ProfileSetupPage = () => {
     try {
       const response = await api.post("/profile-setup", form);
       setUser(response.data.data);
-      navigate("/chat");
+      navigate("/dashboard");
     } catch (requestError) {
       const apiErrors = requestError.response?.data?.errors;
       if (Array.isArray(apiErrors) && apiErrors.length) {

@@ -1,15 +1,15 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import { User } from "../models/User.js";
 import { authRequired, signAuthToken } from "../middleware/auth.js";
 
 const router = Router();
 const emailRegex = /^[^@]+@[^@]+\.[^@]+$/;
 
-router.post("/register", async (req, res) => {
+router.post("/register", async (req: Request, res: Response) => {
   try {
     const { name = "", email = "", password = "", confirm_password = "" } = req.body || {};
     const normalizedEmail = String(email).trim().toLowerCase();
-    const errors = [];
+    const errors: string[] = [];
 
     if (String(name).trim().length < 2) errors.push("Name must be at least 2 characters.");
     if (!emailRegex.test(normalizedEmail)) errors.push("Please enter a valid email address.");
@@ -30,7 +30,7 @@ router.post("/register", async (req, res) => {
     await user.save();
 
     return res.status(201).json({ success: true, message: "Account created successfully! Please log in." });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Registration failed", {
       name: error.name,
       code: error.code,
@@ -41,7 +41,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/login", async (req, res) => {
+router.post("/login", async (req: Request, res: Response) => {
   try {
     const { email = "", password = "" } = req.body || {};
     const normalizedEmail = String(email).trim().toLowerCase();
@@ -62,16 +62,19 @@ router.post("/login", async (req, res) => {
         user: user.toSafeObject(),
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     return res.status(500).json({ success: false, error: error.message || "Login failed" });
   }
 });
 
-router.post("/logout", (_req, res) => {
+router.post("/logout", (_req: Request, res: Response) => {
   return res.json({ success: true, message: "Logged out successfully." });
 });
 
-router.get("/me", authRequired, (req, res) => {
+router.get("/me", authRequired, (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: "Unauthorized" });
+  }
   return res.json({ success: true, data: req.user.toSafeObject() });
 });
 

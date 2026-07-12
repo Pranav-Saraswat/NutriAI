@@ -1,9 +1,9 @@
-import { Router } from "express";
+import { Router, Request, Response } from "express";
 import mongoose from "mongoose";
 
 const router = Router();
 
-router.get("/health", (_req, res) => {
+router.get("/health", (_req: Request, res: Response) => {
   const isConnected = mongoose.connection.readyState === 1;
   const statusCode = isConnected ? 200 : 503;
 

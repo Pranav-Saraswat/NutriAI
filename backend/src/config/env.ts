@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const asBool = (value, fallback = false) => {
+const asBool = (value: string | undefined, fallback = false): boolean => {
   if (value === undefined) return fallback;
   return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
 };

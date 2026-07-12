@@ -1,9 +1,59 @@
-import mongoose from "mongoose";
+import mongoose, { Document, Schema } from "mongoose";
 import bcrypt from "bcryptjs";
 
-const { Schema } = mongoose;
+export interface IUser {
+  email: string;
+  passwordHash: string;
+  name: string;
+  age?: number;
+  gender?: "male" | "female" | "other" | null;
+  heightCm?: number;
+  weightKg?: number;
+  goalType?: "weight_loss" | "muscle_gain" | "maintain" | "improve_health" | null;
+  targetWeight?: number | null;
+  activityLevel?: "sedentary" | "light" | "moderate" | "active" | "very_active" | null;
+  dietaryPreferences?: string | null;
+  allergies?: string | null;
+  medicalConditions?: string | null;
+  role: "user" | "admin";
+  isActive: boolean;
+  lastLogin?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-const userSchema = new Schema(
+export interface IUserDocument extends Document, Omit<IUser, "createdAt" | "updatedAt"> {
+  _id: mongoose.Types.ObjectId;
+  setPassword(password: string): Promise<void>;
+  checkPassword(password: string): Promise<boolean>;
+  getBmi(): number | null;
+  getBmiCategory(): string | null;
+  getProfileSummary(): string;
+  toSafeObject(): {
+    id: string;
+    email: string;
+    role: "user" | "admin";
+    name: string;
+    age?: number;
+    gender: "male" | "female" | "other" | null;
+    height_cm?: number;
+    weight_kg?: number;
+    goal_type?: "weight_loss" | "muscle_gain" | "maintain" | "improve_health" | null;
+    target_weight?: number | null;
+    activity_level?: "sedentary" | "light" | "moderate" | "active" | "very_active" | null;
+    dietary_preferences?: string | null;
+    allergies?: string | null;
+    medical_conditions?: string | null;
+    bmi: number | null;
+    bmi_category: string | null;
+    created_at: Date;
+    last_login?: Date | null;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const userSchema = new Schema<IUserDocument>(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
@@ -17,36 +67,36 @@ const userSchema = new Schema(
       enum: ["weight_loss", "muscle_gain", "maintain", "improve_health", null],
       default: null,
     },
-    targetWeight: Number,
+    targetWeight: { type: Number, default: null },
     activityLevel: {
       type: String,
       enum: ["sedentary", "light", "moderate", "active", "very_active", null],
       default: null,
     },
-    dietaryPreferences: String,
-    allergies: String,
-    medicalConditions: String,
+    dietaryPreferences: { type: String, default: null },
+    allergies: { type: String, default: null },
+    medicalConditions: { type: String, default: null },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     isActive: { type: Boolean, default: true },
-    lastLogin: Date,
+    lastLogin: { type: Date, default: null },
   },
   { timestamps: true }
 );
 
-userSchema.methods.setPassword = async function setPassword(password) {
+userSchema.methods.setPassword = async function setPassword(password: string): Promise<void> {
   this.passwordHash = await bcrypt.hash(password, 10);
 };
 
-userSchema.methods.checkPassword = async function checkPassword(password) {
+userSchema.methods.checkPassword = async function checkPassword(password: string): Promise<boolean> {
   return bcrypt.compare(password, this.passwordHash || "");
 };
 
-userSchema.methods.getBmi = function getBmi() {
+userSchema.methods.getBmi = function getBmi(): number | null {
   if (!this.heightCm || !this.weightKg) return null;
   return this.weightKg / ((this.heightCm / 100) ** 2);
 };
 
-userSchema.methods.getBmiCategory = function getBmiCategory() {
+userSchema.methods.getBmiCategory = function getBmiCategory(): string | null {
   const bmi = this.getBmi();
   if (!bmi) return null;
   if (bmi < 18.5) return "Underweight";
@@ -55,8 +105,8 @@ userSchema.methods.getBmiCategory = function getBmiCategory() {
   return "Obese";
 };
 
-userSchema.methods.getProfileSummary = function getProfileSummary() {
-  const summary = [];
+userSchema.methods.getProfileSummary = function getProfileSummary(): string {
+  const summary: string[] = [];
   if (this.name) summary.push(`Name: ${this.name}`);
   if (this.age) summary.push(`Age: ${this.age} years old`);
   if (this.gender) summary.push(`Gender: ${this.gender}`);
@@ -97,4 +147,4 @@ userSchema.methods.toSafeObject = function toSafeObject() {
   };
 };
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model<IUserDocument>("User", userSchema);

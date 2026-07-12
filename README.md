@@ -4,145 +4,119 @@
 [![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Netlify](https://img.shields.io/badge/Netlify-00C7B7?style=for-the-badge&logo=netlify&logoColor=white)](https://www.netlify.com/)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 
-> **NutriAI** is your personal, AI-powered diet coach. Designed for athletes and fitness enthusiasts, it bridges the gap between raw data and actionable nutrition guidance.
-
----
-
-## 📸 Preview
-
-<p align="center">
-  <img src="./assets/LoginPage.png" alt="NutriAI Landing Page" width="90%" />
-  <br>
-  <i>The NutriAI Landing Page - Discipline in every rep, and every meal.</i>
-</p>
-
-<p align="center">
-  <img src="./assets/MainPage.png" alt="NutriAI Dashboard" width="90%" />
-  <br>
-  <i>The Athlete Console - Real-time tracking and AI coaching.</i>
-</p>
+> **NutriAI** is your personal, AI-powered nutrition and diet coach. Built for athletes and fitness enthusiasts, it leverages advanced AI vision and text models to analyze meals, track daily macro/hydration targets, and provide personalized training nutrition recommendations.
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-- 👤 **Personalized Onboarding**: Tailored profiles based on age, height, weight, activity level, and dietary goals.
-- 🤖 **AI Nutrition Coach**: Groq-powered chat for instant meal plans, macro calculations, and recovery tips.
-- 📊 **Dynamic Dashboard**: Track your daily targets (Calories, Protein, Water, Steps) at a glance.
-- 📈 **Weight Trends**: Log your weight and visualize progress with intuitive trend displays.
-- 🔐 **Secure Auth**: JWT-based authentication for a private and personalized experience.
-- 🌐 **Deploy Ready**: Fully optimized for Netlify (Frontend + Functions) and Docker environments.
-
----
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Framework**: React 18 with TypeScript
-- **Bundler**: Parcel
-- **Styling**: Modern CSS with glassmorphic aesthetics
-- **State/Routing**: React Context API & React Router
-
-### Backend
-- **Runtime**: Node.js & Express
-- **Database**: MongoDB (Atlas Compatible)
-- **AI Integration**: Groq SDK (Llama 3.1)
-- **Security**: JWT, Helmet, CORS
+- 👤 **Onboarding & Goals Setup**: Structured profile setup covering age, gender, height, weight, activity levels, allergies, and target weight.
+- 📸 **AI Vision Food Analyzer**: Drag-and-drop meal images to get automatic ingredient breakdown, calorie/macro counts, and confidence scores (powered by Groq Llama 3.2 Vision).
+- 📝 **AI Text Meal Estimator**: Quick text descriptions (e.g., "3 scrambled eggs and an avocado") mapped to calorie/macro counts.
+- 🛠️ **Macro Review & Corrections**: Edit meal name, ingredients, or macro estimates before committing them to your database log.
+- 📊 **Athlete Dashboard**: Real-time Circular SVG progress gauges tracking Calories, Protein, Hydration, and Steps.
+- 📈 **Weekly SVG Analytics**: Interactive custom SVG charts displaying caloric targets vs. logged intake, weekly weight fluctuations, and step/water logs.
+- 💬 **Live Chat Coach**: Real-time streaming WebSocket connection with your AI nutrition coach for diet logs, cutting/bulking advice, and grocery lists.
+- 🧪 **Comprehensive Tests**: Strict unit testing for target calculations and user instance methods with Jest.
+- 🚀 **DevOps & CI/CD**: Production-grade Docker Compose setup with persistent DB/uploads volumes and automated GitHub Actions verification pipelines.
 
 ---
 
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- Node.js (v18+)
-- MongoDB Atlas Account (or local MongoDB)
-- Groq API Key
-
-### 2. Environment Setup
-Clone the example env file and fill in your credentials:
-```bash
-cp .env.example .env
-```
-
-| Key | Description |
-| --- | --- |
-| `MONGO_URI` | Your MongoDB connection string |
-| `JWT_SECRET` | A strong random secret for auth |
-| `GROQ_API_KEY` | Your Groq API key |
-
-### 3. Run Locally
-
-**Backend:**
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 4. Docker (Alternative)
-Run the entire stack with a single command:
-```bash
-docker compose up --build
-```
-
-### 5. Quick Clean Script
-Use the provided `start.sh` for maintenance:
-```bash
-./start.sh --clean-docker
-```
-
----
-
-## 📂 Project Structure
+## 📂 Architecture & File Structure
 
 ```text
 NutriAI/
-├── backend/            # Express API & AI Services
-│   ├── src/config/     # DB & App Config
-│   ├── src/routes/     # API Endpoints
-│   └── src/services/   # Groq AI Logic
-├── frontend/           # React Dashboard
-│   ├── src/components/ # Reusable UI
-│   ├── src/pages/      # Main Views
-│   └── src/styles/     # Design System
-├── assets/             # Screenshots & Media
-└── netlify/            # Serverless Deployment
+├── .github/workflows/  # CI/CD Workflows
+│   └── ci.yml          # Install, Typecheck, Test, and Containerize
+├── backend/            # TypeScript Node.js/Express Server
+│   ├── src/config/     # Database and Env configurations (db.ts, env.ts)
+│   ├── src/middleware/ # Auth & Multer upload logic (auth.ts, upload.ts)
+│   ├── src/models/     # Mongoose models (User, Meal, DailyLog, WeightLog, ChatMessage)
+│   ├── src/routes/     # REST Controllers (authRoutes, userRoutes, mealRoutes, chatRoutes)
+│   ├── src/services/   # AI services (aiMealService.ts, llmService.ts)
+│   ├── src/sockets/    # Real-time WebSocket streaming handlers (chatSocket.ts)
+│   ├── src/tests/      # Jest test suites
+│   ├── dist/           # Compiled JS output for production
+│   └── tsconfig.json   # Backend TS rules config
+├── frontend/           # TypeScript React Client (Parcel Bundler)
+│   ├── src/api/        # Axios API configurations (client.ts)
+│   ├── src/components/ # Shared Navigation & Protected Route layouts
+│   ├── src/pages/      # Main views (Dashboard, Analytics, Recommendations, Chat, Profile)
+│   └── src/types/      # Strictly defined shared API interfaces (api.ts)
+├── netlify/            # Netlify functions setup
+└── docker-compose.yml  # Local stack orchestration (Mongo + Backend + Frontend Nginx)
 ```
 
 ---
 
-## 📡 API Overview
+## 📡 API Endpoints
 
-| Category | Endpoint | Method | Description |
-| --- | --- | --- | --- |
-| **Auth** | `/api/auth/register` | `POST` | Create account |
-| **Auth** | `/api/auth/login` | `POST` | Get JWT token |
-| **User** | `/api/user` | `GET` | Get profile data |
-| **Chat** | `/api/chat` | `POST` | Talk to AI Coach |
-| **Stats** | `/api/weight-log` | `POST` | Add weight entry |
+### 🔐 Authentication & Profile
+- `POST /api/auth/register` - Create an account.
+- `POST /api/auth/login` - Obtain JWT session token.
+- `POST /api/auth/logout` - Clear user session.
+- `GET /api/auth/me` - Retrieve current athlete profile.
+- `POST /api/profile-setup` - Initialize onboarding goal profile.
+- `PUT /api/profile` - Update athlete console attributes.
+- `GET /api/weight-log` & `POST /api/weight-log` - Log and view weight logs.
+
+### 🥗 Meal Logging & AI
+- `POST /api/meals/analyze` - Analyze uploaded meal photo (Multipart form) or description text (JSON). Returns recognized macro breakdown.
+- `POST /api/meals` - Commit reviewed or manual meal log to history.
+- `GET /api/meals` - Retrieve logged meals for a specific date (`?date=YYYY-MM-DD`).
+- `PUT /api/meals/:id` - Edit a logged meal (marks database record as `isCorrected: true`).
+- `DELETE /api/meals/:id` - Remove a meal log.
+- `GET /api/meals/daily-summary` - Get goals vs. logged totals (calories, protein, carbs, fat, water, steps).
+- `GET /api/meals/weekly-summary` - Aggregate calorie/protein logs, hydration levels, steps, and weight logs for the past 7 days.
+- `GET /api/meals/recommendations` - Query LLM for meal choices fitting remaining today's target macros.
+
+---
+
+## 🚀 Installation & Setup
+
+### 1. Environment Configuration
+Clone the environment template and configure your credentials:
+```bash
+cp .env.example .env
+```
+Fill in the following variables:
+- `MONGO_URI` (MongoDB connection URI)
+- `JWT_SECRET` (JWT encryption key)
+- `GROQ_API_KEY` (Groq SDK console API key)
+
+### 2. Running Locally
+
+**Backend (Express API):**
+```bash
+cd backend
+npm install
+npm run dev     # Starts compiler watch using tsx
+```
+
+**Frontend (React Client):**
+```bash
+cd frontend
+npm install
+npm run dev     # Launches local Parcel dev server on port 5173
+```
+
+### 3. Running with Docker Compose
+To compile, prune, and spin up the complete containerized stack (Backend + Frontend served via Nginx + local MongoDB 7.0 database) with persistent volumes:
+```bash
+docker compose up --build
+```
+- App Client: [http://localhost:5173](http://localhost:5173)
+- API Gateway: [http://localhost:5000/api](http://localhost:5000/api)
 
 ---
 
-## 🛠️ Troubleshooting
+## 🧪 Testing
 
-- **API Connection Issues**: Ensure your `CORS_ORIGINS` in `.env` matches your frontend URL.
-- **AI Not Responding**: Check your `GROQ_API_KEY` and ensure you haven't hit rate limits.
-- **Database Errors**: For MongoDB Atlas, ensure you've whitelisted your IP in the Atlas Dashboard.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
----
-<p align="center">Built with ❤️ by Pranav Saraswat.</p>
+To run the backend test suites verifying rounding logic, target formulas, and Mongoose User model instances:
+```bash
+cd backend
+npm test
+```
+*Note: Jest runs in strict ESModule mode with `--experimental-vm-modules` flags enabled for typecheck compatibility.*

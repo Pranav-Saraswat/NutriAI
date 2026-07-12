@@ -1,4 +1,21 @@
-export const calculateDailyTargets = (user) => {
+export interface DailyTargets {
+  maintenance_calories: number;
+  calorie_target: number;
+  protein_grams: number;
+  water_liters: number;
+  steps_goal: number;
+}
+
+export interface ITargetUser {
+  age?: number | null;
+  gender?: "male" | "female" | "other" | null;
+  heightCm?: number | null;
+  weightKg?: number | null;
+  activityLevel?: "sedentary" | "light" | "moderate" | "active" | "very_active" | null;
+  goalType?: "weight_loss" | "muscle_gain" | "maintain" | "improve_health" | null;
+}
+
+export const calculateDailyTargets = (user: ITargetUser | null | undefined): DailyTargets | null => {
   if (!user || !user.age || !user.heightCm || !user.weightKg || !user.gender) {
     return null;
   }
@@ -13,7 +30,7 @@ export const calculateDailyTargets = (user) => {
     moderate: 1.55,
     active: 1.725,
     very_active: 1.9,
-  }[user.activityLevel] || 1.2;
+  }[user.activityLevel || "sedentary"] || 1.2;
 
   const maintenanceCalories = Math.round(bmr * activityMultiplier);
   let calorieTarget = maintenanceCalories;
@@ -25,7 +42,7 @@ export const calculateDailyTargets = (user) => {
     muscle_gain: 2.0,
     maintain: 1.6,
     improve_health: 1.5,
-  }[user.goalType] || 1.6;
+  }[user.goalType || "maintain"] || 1.6;
 
   return {
     maintenance_calories: maintenanceCalories,

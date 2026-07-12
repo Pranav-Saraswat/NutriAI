@@ -1,7 +1,7 @@
 import Groq from "groq-sdk";
 import { env } from "../config/env.js";
 
-const getSystemPrompt = (profileSummary) => `You are an AI Nutrition and Fitness Assistant.
+const getSystemPrompt = (profileSummary: string): string => `You are an AI Nutrition and Fitness Assistant.
 
 RULE 1 - DOMAIN RESTRICTION
 You ONLY answer questions related to:
@@ -35,11 +35,12 @@ ${profileSummary}`;
 
 const greetingRegex = /^(hi|hello|hey|hii|hiii|good morning|good afternoon|good evening|namaste|yo)[!.?\s]*$/i;
 
-export const isShortGreeting = (message) => greetingRegex.test(String(message || "").trim());
+export const isShortGreeting = (message: string): boolean =>
+  greetingRegex.test(String(message || "").trim());
 
 export const greetingResponse = "Hello! How can I help you with your diet plan today?";
 
-const normalizeResponse = (content) => {
+const normalizeResponse = (content: any): string => {
   if (typeof content === "string") return content.trim();
   if (!content) return "";
   if (Array.isArray(content)) {
@@ -52,13 +53,20 @@ const normalizeResponse = (content) => {
   return String(content).trim();
 };
 
+export interface IChatMessageInput {
+  role: "user" | "assistant" | "system";
+  content: string;
+}
+
 class LlmService {
+  public client: Groq | null;
+
   constructor() {
     this.client = env.groqApiKey ? new Groq({ apiKey: env.groqApiKey }) : null;
   }
 
-  buildMessages(userMessage, profileSummary, chatHistory = []) {
-    const messages = [{ role: "system", content: getSystemPrompt(profileSummary) }];
+  buildMessages(userMessage: string, profileSummary: string, chatHistory: IChatMessageInput[] = []): any[] {
+    const messages: any[] = [{ role: "system", content: getSystemPrompt(profileSummary) }];
     for (const message of chatHistory.slice(-env.chatHistoryLimit)) {
       messages.push({ role: message.role, content: message.content });
     }
@@ -68,7 +76,7 @@ class LlmService {
     return messages;
   }
 
-  async chat(userMessage, profileSummary, chatHistory = []) {
+  async chat(userMessage: string, profileSummary: string, chatHistory: IChatMessageInput[] = []): Promise<{ success: boolean; response?: string; error?: string }> {
     if (!this.client) {
       return { success: false, error: "GROQ_API_KEY is missing. AI chat is unavailable." };
     }
@@ -87,12 +95,17 @@ class LlmService {
         return { success: false, error: "The AI service returned an empty response." };
       }
       return { success: true, response };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, error: error.message || "AI request failed" };
     }
   }
 
-  async chatStream(userMessage, profileSummary, chatHistory = [], onToken = () => {}) {
+  async chatStream(
+    userMessage: string,
+    profileSummary: string,
+    chatHistory: IChatMessageInput[] = [],
+    onToken: (token: string) => void = () => {}
+  ): Promise<{ success: boolean; response?: string; error?: string }> {
     if (!this.client) {
       return { success: false, error: "GROQ_API_KEY is missing. AI chat is unavailable." };
     }
@@ -120,7 +133,7 @@ class LlmService {
       }
 
       return { success: true, response: fullResponse.trim() };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, error: error.message || "AI stream failed" };
     }
   }
