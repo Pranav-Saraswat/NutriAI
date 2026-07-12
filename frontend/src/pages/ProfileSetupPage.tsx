@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { isAxiosError } from "axios";
 import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
@@ -22,7 +23,7 @@ export const ProfileSetupPage = () => {
   const [form, setForm] = useState(emptyProfile);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (event) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
 
@@ -30,13 +31,17 @@ export const ProfileSetupPage = () => {
       const response = await api.post("/profile-setup", form);
       setUser(response.data.data);
       navigate("/dashboard");
-    } catch (requestError) {
-      const apiErrors = requestError.response?.data?.errors;
-      if (Array.isArray(apiErrors) && apiErrors.length) {
-        setError(apiErrors.join(" "));
-        return;
+    } catch (requestError: unknown) {
+      if (isAxiosError(requestError)) {
+        const apiErrors = requestError.response?.data?.errors;
+        if (Array.isArray(apiErrors) && apiErrors.length) {
+          setError(apiErrors.join(" "));
+          return;
+        }
+        setError(requestError.response?.data?.error || "Profile update failed.");
+      } else {
+        setError("Profile update failed.");
       }
-      setError(requestError.response?.data?.error || "Profile update failed.");
     }
   };
 
